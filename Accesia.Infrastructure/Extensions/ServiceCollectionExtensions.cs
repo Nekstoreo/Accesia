@@ -2,7 +2,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Accesia.Infrastructure.Data;
+using Accesia.Application.Common.Interfaces;
+using Accesia.Application.Common.Settings;
+using Accesia.Infrastructure.Services;
 
 namespace Accesia.Infrastructure.Extensions;
 
@@ -42,6 +46,13 @@ public static class ServiceCollectionExtensions
                 configuration.GetConnectionString("DefaultConnection")!,
                 name: "postgresql",
                 tags: new[] { "database", "postgresql" });
+
+        // Configurar JWT Settings
+        services.Configure<JwtSettings>(options => 
+            configuration.GetSection(JwtSettings.SectionName).Bind(options));
+        
+        // Registrar servicios
+        services.AddScoped<IJwtTokenService, JwtTokenService>();
 
         // TODO: Registrar repositorios cuando se implementen
         // services.AddScoped<IUserRepository, UserRepository>();
