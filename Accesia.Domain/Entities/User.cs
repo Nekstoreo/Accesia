@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics.CodeAnalysis;
 using Accesia.Domain.Common;
 using Accesia.Domain.ValueObjects;
 
@@ -48,25 +49,23 @@ public class User : AuditableEntity
     // Constructor privado para EF Core
     private User() { }
 
-    public User(Email email, string password, string firstName, string lastName)
+    [SetsRequiredMembers]
+    public User(Email email, string passwordHash, string firstName, string lastName)
     {
         Email = email;
-        PasswordHash = password;
+        PasswordHash = passwordHash;
         FirstName = firstName;
         LastName = lastName;
+        Status = UserStatus.PendingConfirmation;
+        IsEmailVerified = false;
+        PasswordChangedAt = DateTime.UtcNow;
+        FailedLoginAttempts = 0;
     }
 
     // Factory method estático CreateNewUser()
-    public static User CreateNewUser(Email email, string password, string firstName, string lastName)
+    public static User CreateNewUser(Email email, string passwordHash, string firstName, string lastName)
     {
-        return new User
-        {
-            Email = email,
-            PasswordHash = password,
-            FirstName = firstName,
-            LastName = lastName,
-            Status = UserStatus.PendingConfirmation
-        };
+        return new User(email, passwordHash, firstName, lastName);
     }
 
     // Métodos de validación
