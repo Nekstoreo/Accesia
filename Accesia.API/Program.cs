@@ -6,9 +6,6 @@ var builder = WebApplication.CreateBuilder(args);
 // Configurar Serilog
 Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(builder.Configuration)
-    .Enrich.FromLogContext()
-    .WriteTo.Console()
-    .WriteTo.File("logs/accesia-.txt", rollingInterval: RollingInterval.Day)
     .CreateLogger();
 
 builder.Host.UseSerilog();
@@ -22,6 +19,10 @@ builder.Services.AddSwaggerGen();
 
 // Agregar servicios de infraestructura (Entity Framework, etc.)
 builder.Services.AddInfrastructure(builder.Configuration);
+
+// Configurar Health Checks
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<Accesia.Infrastructure.Data.ApplicationDbContext>();
 
 // Configurar CORS
 builder.Services.AddCors(options =>
