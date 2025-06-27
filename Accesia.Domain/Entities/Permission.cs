@@ -1,6 +1,5 @@
 using System.Text.Json;
 using Accesia.Domain.Common;
-using Accesia.Domain.Enums;
 
 namespace Accesia.Domain.Entities;
 

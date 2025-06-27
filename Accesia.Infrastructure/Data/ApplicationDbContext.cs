@@ -4,10 +4,11 @@ using Accesia.Domain.Common;
 using System.Reflection;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Accesia.Application.Common.Interfaces;
 
 namespace Accesia.Infrastructure.Data;
 
-public class ApplicationDbContext : DbContext
+public class ApplicationDbContext : DbContext, IApplicationDbContext
 {
     // DbSets para todas las entidades principales
     public DbSet<User> Users { get; set; }

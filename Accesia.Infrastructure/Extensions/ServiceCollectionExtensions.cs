@@ -2,7 +2,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Accesia.Infrastructure.Data;
 using Accesia.Application.Common.Interfaces;
 using Accesia.Application.Common.Settings;
@@ -39,6 +38,8 @@ public static class ServiceCollectionExtensions
                 options.LogTo(Console.WriteLine, LogLevel.Information);
             }
         });
+
+        services.AddScoped<IApplicationDbContext, ApplicationDbContext>();
 
         // Configurar health checks
         services.AddHealthChecks()

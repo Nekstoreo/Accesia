@@ -1,5 +1,3 @@
-using System.Text.Json;
-using System.Collections.Generic;
 using Accesia.Domain.Common;
 
 namespace Accesia.Domain.Entities;
