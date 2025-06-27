@@ -27,6 +27,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Accesia.Application\Accesia.Application.csproj" />
     <ProjectReference Include="..\Accesia.Infrastructure\Accesia.Infrastructure.csproj" />
   </ItemGroup>
 

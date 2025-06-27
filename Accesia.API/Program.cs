@@ -1,7 +1,9 @@
 using Accesia.Infrastructure.Extensions;
+using Accesia.Application.Extensions;
 using Accesia.Application.Common.Settings;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.EntityFrameworkCore;
 using System.Text;
 using Serilog;
 
@@ -20,6 +22,9 @@ builder.Services.AddControllers();
 // Configurar OpenAPI/Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// Agregar servicios de Application (MediatR, FluentValidation, etc.)
+builder.Services.AddApplication();
 
 // Agregar servicios de infraestructura (Entity Framework, etc.)
 builder.Services.AddInfrastructure(builder.Configuration);
