@@ -54,6 +54,13 @@ public static class ServiceCollectionExtensions
         
         // Registrar servicios
         services.AddScoped<IJwtTokenService, JwtTokenService>();
+        services.AddScoped<IPasswordHashService, PasswordHashService>();
+        services.AddScoped<IEmailService, EmailService>();
+        services.AddScoped<ITokenService, TokenService>();
+        services.AddSingleton<IRateLimitService, RateLimitService>();
+
+        // Registrar Memory Cache para rate limiting
+        services.AddMemoryCache();
 
         // TODO: Registrar repositorios cuando se implementen
         // services.AddScoped<IUserRepository, UserRepository>();
