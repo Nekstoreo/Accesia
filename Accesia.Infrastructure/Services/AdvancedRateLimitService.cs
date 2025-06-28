@@ -3,28 +3,26 @@ using Accesia.Application.Common.Settings;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Accesia.Infrastructure.Services;
 
 public class AdvancedRateLimitService : IAdvancedRateLimitService
 {
     private readonly IMemoryCache _cache;
-    private readonly IDeviceInfoService _deviceInfoService;
     private readonly ILogger<AdvancedRateLimitService> _logger;
-    private readonly ISecurityAuditService _securityAuditService;
     private readonly SecuritySettings _securitySettings;
+    private readonly IServiceProvider _serviceProvider;
 
     public AdvancedRateLimitService(
         IMemoryCache cache,
         ILogger<AdvancedRateLimitService> logger,
-        ISecurityAuditService securityAuditService,
-        IDeviceInfoService deviceInfoService,
+        IServiceProvider serviceProvider,
         IOptions<SecuritySettings> securitySettings)
     {
         _cache = cache;
         _logger = logger;
-        _securityAuditService = securityAuditService;
-        _deviceInfoService = deviceInfoService;
+        _serviceProvider = serviceProvider;
         _securitySettings = securitySettings.Value;
     }
 
@@ -63,6 +61,18 @@ public class AdvancedRateLimitService : IAdvancedRateLimitService
 
         _logger.LogDebug("Registrado intento de {ActionKey} - IP: {IpAddress}, Usuario: {UserId}, Endpoint: {Endpoint}",
             actionKey, ipAddress, userId, endpoint);
+            
+        // Si se excede el límite, registrar en el servicio de auditoría
+        if (policy.MaxAttempts > 0)
+        {
+            var primaryKey = GeneratePrimaryKey(actionKey, ipAddress, userId);
+            var attempts = GetAttemptsForKey(primaryKey, policy);
+            
+            if (attempts.Count >= policy.MaxAttempts)
+            {
+                await LogRateLimitExceededAsync(actionKey, ipAddress, userId, endpoint, cancellationToken);
+            }
+        }
     }
 
     public async Task<TimeSpan> GetRemainingCooldownAsync(string actionKey, string ipAddress, Guid? userId = null,
@@ -414,5 +424,33 @@ public class AdvancedRateLimitService : IAdvancedRateLimitService
     {
         public int Tokens { get; set; }
         public DateTime LastRefill { get; set; }
+    }
+
+    // Método privado para registrar eventos de límite de tasa excedido
+    private async Task LogRateLimitExceededAsync(string actionKey, string ipAddress, Guid? userId, string? endpoint, 
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            // Usar un scope para obtener los servicios scoped
+            using var scope = _serviceProvider.CreateScope();
+            var securityAuditService = scope.ServiceProvider.GetRequiredService<ISecurityAuditService>();
+            var deviceInfoService = scope.ServiceProvider.GetRequiredService<IDeviceInfoService>();
+            var userAgent = "Unknown User Agent"; // En un caso real, esto vendría del contexto HTTP
+            var deviceInfo = deviceInfoService.ExtractDeviceInfo(userAgent);
+            await securityAuditService.LogRateLimitExceededAsync(
+                userId, 
+                ipAddress,
+                userAgent,
+                deviceInfo,
+                endpoint ?? "unknown_endpoint",
+                actionKey,
+                null,
+                cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al registrar evento de límite de tasa excedido");
+        }
     }
 }

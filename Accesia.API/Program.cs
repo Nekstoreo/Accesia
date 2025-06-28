@@ -64,111 +64,65 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization();
 
-// Configurar Rate Limiting
+// enlazar SecuritySettings desde configuración
+builder.Services.Configure<SecuritySettings>(builder.Configuration.GetSection(SecuritySettings.SectionName));
+
+// configurar rate limiting basado en SecuritySettings
+var securitySettings = builder.Configuration.GetSection(SecuritySettings.SectionName).Get<SecuritySettings>()!;
 builder.Services.AddRateLimiter(options =>
 {
     options.OnRejected = async (context, token) =>
     {
         context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
-
         var logMessage = $"Rate limit alcanzado para endpoint {context.HttpContext.Request.Path}. " +
                          $"Usuario: {context.HttpContext.User.Identity?.Name ?? "Anónimo"}, " +
                          $"IP: {context.HttpContext.Connection.RemoteIpAddress}";
-
         context.HttpContext.RequestServices.GetService<ILogger<Program>>()?.LogWarning(logMessage);
-
         await context.HttpContext.Response.WriteAsJsonAsync(
             new
             {
                 title = "Demasiadas solicitudes",
                 detail = "Has excedido el límite de solicitudes permitidas. Por favor, intenta más tarde."
-            },
-            token);
+            }, token);
     };
 
-    // Política general para perfil de usuario (5 peticiones por minuto)
-    options.AddTokenBucketLimiter("UserProfilePolicy", options =>
+    foreach (var kvp in securitySettings.RateLimit.Policies)
     {
-        options.TokenLimit = 5;
-        options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-        options.QueueLimit = 2;
-        options.ReplenishmentPeriod = TimeSpan.FromMinutes(1);
-        options.TokensPerPeriod = 5;
-    });
-
-    // Política para actualizaciones de perfil (2 peticiones por hora)
-    options.AddFixedWindowLimiter("ProfileUpdatePolicy", options =>
-    {
-        options.PermitLimit = 2;
-        options.Window = TimeSpan.FromHours(1);
-        options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-        options.QueueLimit = 1;
-    });
-
-    // Política para cambios de email (1 petición por día)
-    options.AddFixedWindowLimiter("EmailChangePolicy", options =>
-    {
-        options.PermitLimit = 1;
-        options.Window = TimeSpan.FromDays(1);
-        options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-        options.QueueLimit = 0;
-    });
-
-    // Política para confirmación de cambio de email (3 intentos por hora)
-    options.AddFixedWindowLimiter("EmailConfirmationPolicy", options =>
-    {
-        options.PermitLimit = 3;
-        options.Window = TimeSpan.FromHours(1);
-        options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-        options.QueueLimit = 0;
-    });
-
-    // Política para administradores (más permisiva)
-    options.AddTokenBucketLimiter("AdminPolicy", options =>
-    {
-        options.TokenLimit = 50;
-        options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-        options.QueueLimit = 5;
-        options.ReplenishmentPeriod = TimeSpan.FromMinutes(1);
-        options.TokensPerPeriod = 50;
-    });
-
-    // Política para eliminación de cuenta (muy restrictiva - 1 solicitud por semana)
-    options.AddFixedWindowLimiter("AccountDeletionPolicy", options =>
-    {
-        options.PermitLimit = 1;
-        options.Window = TimeSpan.FromDays(7);
-        options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-        options.QueueLimit = 0;
-    });
-
-    // Política para intentos de login (10 intentos por 5 minutos, luego se bloquea)
-    options.AddSlidingWindowLimiter("LoginAttemptPolicy", options =>
-    {
-        options.PermitLimit = 10;
-        options.Window = TimeSpan.FromMinutes(5);
-        options.SegmentsPerWindow = 5;
-        options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-        options.QueueLimit = 0; // Sin cola, rechazar directamente
-    });
-
-    // Política para registros de usuario (3 registros por día por IP)
-    options.AddFixedWindowLimiter("RegisterPolicy", options =>
-    {
-        options.PermitLimit = 3;
-        options.Window = TimeSpan.FromDays(1);
-        options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-        options.QueueLimit = 0;
-    });
-
-    // Política para solicitudes de restablecimiento de contraseña (3 solicitudes por día)
-    options.AddFixedWindowLimiter("PasswordResetPolicy", options =>
-    {
-        options.PermitLimit = 3;
-        options.Window = TimeSpan.FromDays(1);
-        options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-        options.QueueLimit = 0;
-    });
+        var policyName = $"{kvp.Key}Policy";
+        var p = kvp.Value;
+        switch (p.Type)
+        {
+            case "FixedWindow":
+                options.AddFixedWindowLimiter(policyName, opts =>
+                {
+                    opts.PermitLimit = p.MaxAttempts;
+                    opts.Window = TimeSpan.FromMinutes(p.WindowMinutes);
+                    opts.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+                    opts.QueueLimit = p.AdditionalSettings.ContainsKey("QueueLimit") ? Convert.ToInt32(p.AdditionalSettings["QueueLimit"]) : 0;
+                });
+                break;
+            case "SlidingWindow":
+                options.AddSlidingWindowLimiter(policyName, opts =>
+                {
+                    opts.PermitLimit = p.MaxAttempts;
+                    opts.Window = TimeSpan.FromMinutes(p.WindowMinutes);
+                    opts.SegmentsPerWindow = p.Segments;
+                    opts.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+                    opts.QueueLimit = p.AdditionalSettings.ContainsKey("QueueLimit") ? Convert.ToInt32(p.AdditionalSettings["QueueLimit"]) : 0;
+                });
+                break;
+            case "TokenBucket":
+                options.AddTokenBucketLimiter(policyName, opts =>
+                {
+                    opts.TokenLimit = p.TokensPerPeriod;
+                    opts.ReplenishmentPeriod = TimeSpan.FromMinutes(p.ReplenishmentPeriodMinutes);
+                    opts.TokensPerPeriod = p.TokensPerPeriod;
+                    opts.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+                    opts.QueueLimit = p.AdditionalSettings.ContainsKey("QueueLimit") ? Convert.ToInt32(p.AdditionalSettings["QueueLimit"]) : 0;
+                });
+                break;
+        }
+    }
 });
 
 // Configurar CORS
@@ -181,6 +135,19 @@ builder.Services.AddCors(options =>
             .AllowAnyHeader();
     });
 });
+
+// Leer LOG_INTEGRITY_SECRET desde configuración si no está en el entorno
+var logIntegritySecret = Environment.GetEnvironmentVariable("LOG_INTEGRITY_SECRET");
+if (string.IsNullOrEmpty(logIntegritySecret))
+{
+    // Buscar en la configuración (appsettings.Development.json, etc.)
+    var configSecret = builder.Configuration["Security:LogIntegrity:SecretKey"];
+    if (!string.IsNullOrEmpty(configSecret))
+    {
+        Environment.SetEnvironmentVariable("LOG_INTEGRITY_SECRET", configSecret);
+        logIntegritySecret = configSecret;
+    }
+}
 
 var app = builder.Build();
 
@@ -228,6 +195,8 @@ app.MapHealthChecks("/health");
 try
 {
     // Validar que la clave de integridad esté configurada
+    // Esta variable debe configurarse en el entorno o en un archivo .env
+    // Ejemplo: LOG_INTEGRITY_SECRET=your_integrity_secret_key_at_least_32_chars_long
     var integritySecret = Environment.GetEnvironmentVariable("LOG_INTEGRITY_SECRET");
     if (string.IsNullOrEmpty(integritySecret))
     {
