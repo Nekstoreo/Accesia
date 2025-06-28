@@ -63,19 +63,31 @@ public class LoginUserHandler : IRequestHandler<LoginUserCommand, LoginResponse>
             throw new UserNotFoundException("Usuario no encontrado", request.Email);
         }
 
-        // Verificar si la cuenta está bloqueada
-        if (user.IsAccountLocked())
+        // Verificar que el usuario puede iniciar sesión
+        if (!user.CanLogin())
         {
-            _logger.LogWarning("Intento de login en cuenta bloqueada: {Email} hasta {LockedUntil}", 
-                request.Email, user.LockedUntil);
-            throw new AccountLockedException(request.Email, user.LockedUntil!.Value);
-        }
-
-        // Verificar si el email está verificado
-        if (!user.IsEmailVerified)
-        {
-            _logger.LogWarning("Intento de login con email no verificado: {Email}", request.Email);
-            throw new EmailNotVerifiedException(request.Email);
+            _logger.LogWarning("Intento de login denegado para {Email}. Estado: {Status}, Bloqueada: {IsLocked}", 
+                request.Email, user.Status, user.IsAccountLocked());
+                
+            if (!user.IsEmailVerified)
+            {
+                _logger.LogWarning("Intento de login con email no verificado: {Email}", request.Email);
+                throw new EmailNotVerifiedException(request.Email);
+            }
+                
+            if (user.RequiresReactivation())
+                throw new AccountInactiveException(request.Email);
+            
+            if (user.IsAccountLocked())
+                throw new AccountLockedException(request.Email, user.LockedUntil!.Value);
+                
+            if (user.Status == UserStatus.Blocked)
+                throw new AccountBlockedException(request.Email, user.LockedUntil);
+                
+            if (user.Status == UserStatus.MarkedForDeletion)
+                throw new AccountMarkedForDeletionException(request.Email);
+            
+            throw new CannotPerformActionException(request.Email, "login", "Estado de cuenta no permite iniciar sesión");
         }
 
         // Verificar contraseña
