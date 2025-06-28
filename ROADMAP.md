@@ -19,8 +19,8 @@
 
 ### **1.3. Gestión de Contraseñas**
 
-- [ ] 🔄 **Restablecimiento de Contraseña**
-- [ ] 🔄 **Cambio de Contraseña para Usuarios Autenticados**
+- [X] 🔄 **Restablecimiento de Contraseña**
+- [X] 🔄 **Cambio de Contraseña para Usuarios Autenticados**
 
 ### **1.4. Gestión Básica de Usuarios**
 
