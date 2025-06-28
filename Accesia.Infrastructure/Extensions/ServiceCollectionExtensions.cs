@@ -69,6 +69,7 @@ public static class ServiceCollectionExtensions
         // Registrar background jobs
         services.AddHostedService<TokenCleanupJob>();
         services.AddHostedService<SessionCleanupJob>();
+        services.AddHostedService<AccountDeletionJob>();
 
         return services;
     }

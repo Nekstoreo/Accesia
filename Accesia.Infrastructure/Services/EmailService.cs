@@ -63,4 +63,54 @@ public class EmailService : IEmailService
         
         return Task.CompletedTask;
     }
+
+    public Task SendAccountDeletionConfirmationEmailAsync(string email, string fullName, string deletionToken, DateTime tokenExpiration, CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("Enviando email de confirmación de eliminación de cuenta a {Email} para {FullName} con token {Token}. Expira: {Expiration}", 
+            email, fullName, deletionToken, tokenExpiration);
+        
+        // TODO: Implementar plantilla de email específica para confirmación de eliminación
+        // El email debería incluir:
+        // - Mensaje de confirmación de la solicitud de eliminación
+        // - Enlace con el token de confirmación para proceder
+        // - Enlace para cancelar la solicitud
+        // - Información sobre el período de gracia de 30 días
+        // - Tiempo de expiración del token (24 horas)
+        // - Advertencias sobre la irreversibilidad de la acción tras el período de gracia
+        
+        return Task.CompletedTask;
+    }
+
+    public Task SendAccountMarkedForDeletionEmailAsync(string email, string fullName, DateTime permanentDeletionDate, CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("Enviando email de cuenta marcada para eliminación a {Email} para {FullName}. Eliminación permanente: {PermanentDeletionDate}", 
+            email, fullName, permanentDeletionDate);
+        
+        // TODO: Implementar plantilla de email específica para cuenta marcada para eliminación
+        // El email debería incluir:
+        // - Confirmación de que la cuenta ha sido marcada para eliminación
+        // - Fecha exacta de eliminación permanente
+        // - Enlace para cancelar la eliminación durante el período de gracia
+        // - Información sobre qué datos serán eliminados
+        // - Recordatorio sobre la irreversibilidad tras la fecha límite
+        // - Información de contacto en caso de que no haya sido el usuario
+        
+        return Task.CompletedTask;
+    }
+
+    public Task SendAccountDeletionCancelledEmailAsync(string email, string fullName, CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("Enviando email de cancelación de eliminación a {Email} para {FullName}", 
+            email, fullName);
+        
+        // TODO: Implementar plantilla de email específica para cancelación de eliminación
+        // El email debería incluir:
+        // - Confirmación de que la eliminación ha sido cancelada
+        // - Información sobre el estado actual de la cuenta
+        // - Pasos para reactivar la cuenta si es necesario
+        // - Recordatorios de seguridad sobre protección de la cuenta
+        // - Información de contacto para soporte adicional
+        
+        return Task.CompletedTask;
+    }
 } 
