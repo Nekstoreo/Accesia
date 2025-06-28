@@ -47,4 +47,20 @@ public class EmailService : IEmailService
         
         return Task.CompletedTask;
     }
+
+    public Task SendEmailChangeVerificationAsync(string newEmail, string firstName, string verificationToken, CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("Enviando email de verificación de cambio de email a {NewEmail} para {FirstName} con token {Token}", 
+            newEmail, firstName, verificationToken);
+        
+        // TODO: Implementar plantilla de email específica para cambio de email
+        // El email debería incluir:
+        // - Mensaje de confirmación del cambio de email solicitado
+        // - Enlace con el token de verificación
+        // - Información de seguridad sobre la solicitud
+        // - Instrucciones de qué hacer si no fue el usuario
+        // - Tiempo de expiración del token (24 horas)
+        
+        return Task.CompletedTask;
+    }
 } 
