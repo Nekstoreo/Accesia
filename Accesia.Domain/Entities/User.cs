@@ -46,6 +46,7 @@ public class User : AuditableEntity
 
     public ICollection<Session> Sessions { get; set; } = new List<Session>();
     public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
+    public ICollection<PasswordHistory> PasswordHistories { get; set; } = new List<PasswordHistory>();
 
     // Constructor privado para EF Core
     private User() { }
@@ -181,5 +182,37 @@ public class User : AuditableEntity
         return UserRoles
             .Where(ur => ur.IsActive)
             .Any(ur => ur.Role.Name.Equals(roleName, StringComparison.OrdinalIgnoreCase));
-    }  
+    }
+
+    public void ChangePassword(string newPasswordHash)
+    {
+        if (string.IsNullOrWhiteSpace(newPasswordHash))
+            throw new ArgumentException("El hash de la contraseña no puede estar vacío", nameof(newPasswordHash));
+
+        PasswordHash = newPasswordHash;
+        PasswordChangedAt = DateTime.UtcNow;
+        ClearPasswordResetToken();
+    }
+
+    public bool IsPasswordRecentlyUsed(string passwordHash, int historyLimit = 5)
+    {
+        return PasswordHistories
+            .OrderByDescending(ph => ph.PasswordChangedAt)
+            .Take(historyLimit)
+            .Any(ph => ph.PasswordHash == passwordHash);
+    }
+
+    public void ClearPasswordResetToken()
+    {
+        PasswordResetToken = null;
+        PasswordResetTokenExpiresAt = null;
+    }
+
+    public bool IsPasswordResetTokenValid(string token)
+    {
+        return !string.IsNullOrEmpty(PasswordResetToken) &&
+               PasswordResetToken == token &&
+               PasswordResetTokenExpiresAt.HasValue &&
+               PasswordResetTokenExpiresAt > DateTime.UtcNow;
+    }
 }
