@@ -1,6 +1,7 @@
 using Accesia.Infrastructure.Extensions;
 using Accesia.Application.Extensions;
 using Accesia.Application.Common.Settings;
+using Accesia.Application.Common.Exceptions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
@@ -94,6 +95,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Middleware de manejo de excepciones (debe ir antes que otros middlewares)
+app.UseMiddleware<ExceptionMiddleware>();
 
 // Middleware de logging de requests
 app.UseSerilogRequestLogging();
