@@ -58,6 +58,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPasswordHashService, PasswordHashService>();
         services.AddScoped<IEmailService, EmailService>();
         services.AddScoped<ITokenService, TokenService>();
+        services.AddScoped<ISessionService, SessionService>();
+        services.AddScoped<IDeviceInfoService, DeviceInfoService>();
         services.AddSingleton<IRateLimitService, RateLimitService>();
 
         // Registrar Memory Cache para rate limiting
@@ -65,12 +67,7 @@ public static class ServiceCollectionExtensions
 
         // Registrar background jobs
         services.AddHostedService<TokenCleanupJob>();
-
-        // TODO: Registrar repositorios cuando se implementen
-        // services.AddScoped<IUserRepository, UserRepository>();
-        // services.AddScoped<ISessionRepository, SessionRepository>();
-        // services.AddScoped<IRoleRepository, RoleRepository>();
-        // services.AddScoped<IPermissionRepository, PermissionRepository>();
+        services.AddHostedService<SessionCleanupJob>();
 
         return services;
     }
