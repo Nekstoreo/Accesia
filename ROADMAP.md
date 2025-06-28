@@ -44,20 +44,13 @@
 - [ ] 📧 **Verificación por SMS y Email**
 - [ ] ⚙️ **Gestión de Métodos MFA**
 
-### **2.2. Autenticación Social**
-
-- [ ] 🟢 **Integración con Google OAuth 2.0**
-- [ ] 🔵 **Integración con Microsoft OAuth 2.0**
-- [ ] ⚫ **Integración con GitHub OAuth**
-- [ ] 🔗 **Vinculación y Gestión de Cuentas Sociales**
-
-### **2.3. Gestión de Dispositivos**
+### **2.2. Gestión de Dispositivos**
 
 - [ ] 📲 **Reconocimiento y Registro de Dispositivos**
 - [ ] 🚨 **Alertas de Seguridad por Dispositivos Nuevos**
 - [ ] 🖥️ **Gestión de Sesiones por Dispositivo**
 
-### **2.4. Registro de Actividades y Auditoría**
+### **2.3. Registro de Actividades y Auditoría**
 
 - [ ] 📝 **Sistema de Logging Avanzado**
 - [ ] 📊 **Dashboard de Actividad para Usuarios**
@@ -91,6 +84,13 @@
 - [ ] 📢 **Motor de Notificaciones Multi-canal**
 - [ ] ⚙️ **Preferencias de Usuario y Gestión de Suscripciones**
 - [ ] 📬 **Sistema de Entrega y Seguimiento**
+
+### **3.5. Autenticación Social**
+
+- [ ] 🟢 **Integración con Google OAuth 2.0**
+- [ ] 🔵 **Integración con Microsoft OAuth 2.0**
+- [ ] ⚫ **Integración con GitHub OAuth**
+- [ ] 🔗 **Vinculación y Gestión de Cuentas Sociales**
 
 ---
 
