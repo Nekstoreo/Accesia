@@ -71,8 +71,8 @@ public class Permission : AuditableEntity
         {
             Name = name,
             DisplayName = name,
-            Description = name,
-            Category = "System",
+            Description = $"Permiso de sistema para {resource}.{action}",
+            Category = "Sistema",
             Resource = resource,
             Action = action,
             IsSystemPermission = true,
