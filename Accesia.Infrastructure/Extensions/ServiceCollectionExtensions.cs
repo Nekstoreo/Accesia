@@ -53,7 +53,11 @@ public static class ServiceCollectionExtensions
         services.Configure<JwtSettings>(options => 
             configuration.GetSection(JwtSettings.SectionName).Bind(options));
         
-        // Registrar servicios
+        // Configurar Security Settings
+        services.Configure<SecuritySettings>(options => 
+            configuration.GetSection(SecuritySettings.SectionName).Bind(options));
+        
+        // Registrar servicios principales
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<IPasswordHashService, PasswordHashService>();
         services.AddScoped<IPasswordSecurityService, PasswordSecurityService>();
@@ -62,7 +66,12 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<ISessionService, SessionService>();
         services.AddScoped<IDeviceInfoService, DeviceInfoService>();
+        
+        // Servicios de seguridad y auditoría
+        services.AddScoped<ISecurityAuditService, SecurityAuditService>();
         services.AddSingleton<IRateLimitService, RateLimitService>();
+        services.AddSingleton<IAdvancedRateLimitService, AdvancedRateLimitService>();
+        
         // Registrar Memory Cache para rate limiting
         services.AddMemoryCache();
 
