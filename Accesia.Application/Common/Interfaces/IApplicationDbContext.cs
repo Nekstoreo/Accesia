@@ -11,6 +11,7 @@ public interface IApplicationDbContext
     DbSet<Permission> Permissions { get; set; }
     DbSet<UserRole> UserRoles { get; set; }
     DbSet<RolePermission> RolePermissions { get; set; }
+    DbSet<PasswordHistory> PasswordHistories { get; set; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 } 
