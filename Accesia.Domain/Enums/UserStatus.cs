@@ -1,4 +1,4 @@
-namespace Accesia.Domain.Entities;
+namespace Accesia.Domain.Enums;
 
 public enum UserStatus
 {

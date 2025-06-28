@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 using Accesia.Domain.Common;
 using Accesia.Domain.ValueObjects;
+using Accesia.Domain.Enums;
 
 namespace Accesia.Domain.Entities;
 
