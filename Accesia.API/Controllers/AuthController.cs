@@ -4,6 +4,8 @@ using System.Net;
 using Accesia.Application.Features.Authentication.Commands.RegisterUser;
 using Accesia.Application.Features.Authentication.DTOs;
 using Accesia.Application.Common.Exceptions;
+using Accesia.Application.Features.Authentication.Commands.VerifyEmail;
+using Accesia.Application.Features.Authentication.Commands.ResendVerificationEmail;
 
 namespace Accesia.API.Controllers;
 
@@ -57,51 +59,120 @@ public class AuthController : ControllerBase
         catch (EmailAlreadyExistsException ex)
         {
             _logger.LogWarning(ex, "Intento de registro con email duplicado: {Email}", ex.Email);
-            return Conflict(new ProblemDetails
-            {
-                Title = "Email ya registrado",
-                Detail = ex.Message,
-                Status = (int)HttpStatusCode.Conflict,
-                Type = "https://tools.ietf.org/html/rfc7231#section-6.5.8"
+            return Conflict(new { 
+                mensaje = ex.Message,
+                email = ex.Email,
+                timestamp = DateTime.UtcNow 
             });
         }
         catch (RateLimitExceededException ex)
         {
-            _logger.LogWarning(ex, "Rate limit excedido para IP {IP}", GetClientIpAddress());
-            
-            // Agregar header con información del retry
-            Response.Headers.Append("Retry-After", ((int)ex.RetryAfter.TotalSeconds).ToString());
-            
-            return StatusCode((int)HttpStatusCode.TooManyRequests, new ProblemDetails
-            {
-                Title = "Demasiados intentos",
-                Detail = ex.Message,
-                Status = (int)HttpStatusCode.TooManyRequests,
-                Type = "https://tools.ietf.org/html/rfc6585#section-4"
-            });
+            return HandleRateLimitExceeded(ex, "registro");
         }
         catch (ArgumentException ex)
         {
             _logger.LogWarning(ex, "Datos de entrada inválidos para registro");
-            return BadRequest(new ProblemDetails
-            {
-                Title = "Datos inválidos",
-                Detail = ex.Message,
-                Status = (int)HttpStatusCode.BadRequest,
-                Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+            return BadRequest(new { 
+                mensaje = ex.Message,
+                timestamp = DateTime.UtcNow 
             });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error interno al registrar usuario");
-            return StatusCode((int)HttpStatusCode.InternalServerError, new ProblemDetails
-            {
-                Title = "Error interno del servidor",
-                Detail = "Ha ocurrido un error inesperado. Por favor, intenta nuevamente más tarde.",
-                Status = (int)HttpStatusCode.InternalServerError,
-                Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
+            return Problem(
+                detail: "Ha ocurrido un error inesperado. Por favor, intenta nuevamente más tarde.",
+                statusCode: 500,
+                title: "Error interno del servidor");
+        }
+    }
+
+    /// <summary>
+    /// Reenvía el email de verificación al usuario
+    /// </summary>
+    /// <param name="request">Datos para el reenvío de verificación</param>
+    /// <returns>Respuesta del reenvío de verificación</returns>
+    [HttpPost("resend-verification")]
+    [ProducesResponseType(typeof(ResendVerificationResponse), (int)HttpStatusCode.OK)]
+    [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.Conflict)]
+    [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.TooManyRequests)]
+    public async Task<ActionResult<ResendVerificationResponse>> ResendVerification(
+        [FromBody] ResendVerificationRequest request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            // Obtener la IP del cliente
+            var clientIp = GetClientIpAddress();
+            
+            // Crear el comando con la IP del cliente
+            var command = ResendVerificationEmailCommand.FromRequest(request, clientIp);
+            
+            // Ejecutar el comando
+            var response = await _mediator.Send(command, cancellationToken);
+            
+            _logger.LogInformation("Email de verificación reenviado exitosamente a {Email}", request.Email);
+            
+            return Ok(response);
+        }
+        catch (UserNotFoundException ex)
+        {
+            _logger.LogWarning(ex, "Usuario no encontrado para reenvío: {Email}", ex.Email);
+            return Problem(
+                detail: ex.Message,
+                statusCode: 404,
+                title: "Usuario no encontrado");
+        }
+        catch (EmailAlreadyVerifiedException ex)
+        {
+            _logger.LogWarning(ex, "Intento de reenvío para email ya verificado: {Email}", ex.Email);
+            return Conflict(new { 
+                mensaje = ex.Message,
+                email = ex.Email,
+                timestamp = DateTime.UtcNow 
             });
         }
+        catch (RateLimitExceededException ex)
+        {
+            return HandleRateLimitExceeded(ex, "reenvío de verificación");
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "Datos de entrada inválidos para reenvío");
+            return BadRequest(new { 
+                mensaje = ex.Message,
+                timestamp = DateTime.UtcNow 
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error interno al reenviar verificación");
+            return Problem(
+                detail: "Ha ocurrido un error inesperado. Por favor, intenta nuevamente más tarde.",
+                statusCode: 500,
+                title: "Error interno del servidor");
+        }
+    }
+
+    /// <summary>
+    /// Maneja las excepciones de rate limiting de manera centralizada
+    /// </summary>
+    /// <param name="ex">Excepción de rate limiting</param>
+    /// <param name="action">Acción que fue limitada</param>
+    /// <returns>Respuesta HTTP con código 429</returns>
+    private ActionResult HandleRateLimitExceeded(RateLimitExceededException ex, string action)
+    {
+        _logger.LogWarning(ex, "Rate limit excedido para {Action} desde IP {IP}", action, GetClientIpAddress());
+        
+        // Agregar header con información del retry
+        Response.Headers.Append("Retry-After", ((int)ex.RetryAfter.TotalSeconds).ToString());
+        
+        return Problem(
+            detail: ex.Message,
+            statusCode: 429,
+            title: "Demasiados intentos");
     }
 
     /// <summary>
@@ -134,4 +205,83 @@ public class AuthController : ControllerBase
         // Fallback a la IP de conexión remota
         return Request.HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
     }
-} 
+
+    /// <summary>
+    /// Verifica el correo electrónico del usuario
+    /// </summary>
+    /// <param name="request">Datos de verificación del correo electrónico</param>
+    /// <returns>Respuesta de verificación del correo electrónico</returns>
+    [HttpPost("verify-email")]
+    [ProducesResponseType(typeof(VerifyEmailResponse), (int)HttpStatusCode.OK)]
+    [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.Gone)]
+    [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.Conflict)]
+    [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.TooManyRequests)]
+    public async Task<ActionResult<VerifyEmailResponse>> VerifyEmail(
+        [FromBody] VerifyEmailRequest request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            // Obtener la IP del cliente
+            var clientIp = GetClientIpAddress();
+            
+            // Crear el comando con la IP del cliente
+            var command = VerifyEmailCommand.FromRequest(request, clientIp);
+            
+            // Ejecutar el comando
+            var response = await _mediator.Send(command, cancellationToken);
+            
+            _logger.LogInformation("Correo electrónico verificado exitosamente");
+            
+            return Ok(response);
+        }
+        catch (InvalidVerificationTokenException ex)
+        {
+            _logger.LogWarning(ex, "Token de verificación inválido: {Token}", ex.Token);
+            return Problem(
+                detail: ex.Message,
+                statusCode: 404,
+                title: "Token de verificación inválido");
+        }
+        catch (ExpiredVerificationTokenException ex)
+        {
+            _logger.LogWarning(ex, "Token de verificación expirado: {Token}", ex.Token);
+            return Problem(
+                detail: ex.Message,
+                statusCode: 410,
+                title: "Token de verificación expirado");
+        }
+        catch (EmailAlreadyVerifiedException ex)
+        {
+            _logger.LogWarning(ex, "Correo electrónico ya verificado: {Email}", ex.Email);
+            return Conflict(new { 
+                mensaje = ex.Message,
+                email = ex.Email,
+                token = ex.Token,
+                timestamp = DateTime.UtcNow 
+            });
+        }
+        catch (RateLimitExceededException ex)
+        {
+            return HandleRateLimitExceeded(ex, "verificación de email");
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "Datos de entrada inválidos para verificación");
+            return BadRequest(new { 
+                mensaje = ex.Message,
+                timestamp = DateTime.UtcNow 
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error interno al verificar correo electrónico");
+            return Problem(
+                detail: "Ha ocurrido un error inesperado. Por favor, intenta nuevamente más tarde.",
+                statusCode: 500,
+                title: "Error interno del servidor");
+        }
+    }
+}
