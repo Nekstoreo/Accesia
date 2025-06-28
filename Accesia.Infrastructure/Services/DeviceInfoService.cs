@@ -155,6 +155,7 @@ public class DeviceInfoService : IDeviceInfoService
 
     private static string? DetermineCountry(string ipAddress)
     {
+        // TODO: Implementar geolocalización
         // En una implementación real, aquí se usaría un servicio de geolocalización
         // como MaxMind GeoIP2 o similar
 
@@ -164,6 +165,7 @@ public class DeviceInfoService : IDeviceInfoService
 
     private static string? DetermineCity(string ipAddress)
     {
+        // TODO: Implementar geolocalización
         // En una implementación real, aquí se usaría un servicio de geolocalización
         // como MaxMind GeoIP2 o similar
 

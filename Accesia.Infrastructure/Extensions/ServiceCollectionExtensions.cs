@@ -69,6 +69,9 @@ public static class ServiceCollectionExtensions
 
         // Servicios de seguridad y auditoría
         services.AddScoped<ISecurityAuditService, SecurityAuditService>();
+        services.AddScoped<ISecurityAlertService, SecurityAlertService>();
+        services.AddScoped<ISecuritySearchService, SecuritySearchService>();
+        services.AddScoped<ILogIntegrityService, LogIntegrityService>();
         services.AddSingleton<IRateLimitService, RateLimitService>();
         services.AddSingleton<IAdvancedRateLimitService, AdvancedRateLimitService>();
 
@@ -79,6 +82,7 @@ public static class ServiceCollectionExtensions
         services.AddHostedService<TokenCleanupJob>();
         services.AddHostedService<SessionCleanupJob>();
         services.AddHostedService<AccountDeletionJob>();
+        services.AddHostedService<AuditLogCleanupJob>();
 
         return services;
     }

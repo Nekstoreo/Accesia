@@ -224,6 +224,32 @@ app.MapControllers();
 // Configurar health checks
 app.MapHealthChecks("/health");
 
+// Validar configuraciones críticas de seguridad al inicio
+try
+{
+    // Validar que la clave de integridad esté configurada
+    var integritySecret = Environment.GetEnvironmentVariable("LOG_INTEGRITY_SECRET");
+    if (string.IsNullOrEmpty(integritySecret))
+    {
+        throw new InvalidOperationException(
+            "LOG_INTEGRITY_SECRET environment variable is required for security audit log integrity. " +
+            "Please configure this environment variable with a secure random key of at least 32 characters.");
+    }
+
+    if (integritySecret.Length < 32)
+    {
+        throw new InvalidOperationException(
+            "LOG_INTEGRITY_SECRET must be at least 32 characters long for adequate security.");
+    }
+
+    app.Logger.LogInformation("Security configuration validated successfully");
+}
+catch (Exception ex)
+{
+    app.Logger.LogCritical(ex, "Critical security configuration error. Application cannot start safely.");
+    throw;
+}
+
 try
 {
     Log.Information("Iniciando Accesia API");

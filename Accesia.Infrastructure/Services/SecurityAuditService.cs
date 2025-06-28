@@ -10,18 +10,32 @@ namespace Accesia.Infrastructure.Services;
 public class SecurityAuditService : ISecurityAuditService
 {
     private static readonly HashSet<string> CriticalSeverities = new() { "Critical", "High" };
+    private static readonly HashSet<string> CriticalAuditEvents = new()
+    {
+        "password_changed",
+        "admin_action_performed",
+        "privilege_escalation",
+        "account_deletion_confirmed",
+        "security_settings_changed"
+    };
+    private readonly ISecurityAlertService _alertService;
     private readonly ApplicationDbContext _context;
     private readonly IEmailService _emailService;
+    private readonly ILogIntegrityService _integrityService;
     private readonly ILogger<SecurityAuditService> _logger;
 
     public SecurityAuditService(
         ApplicationDbContext context,
         ILogger<SecurityAuditService> logger,
-        IEmailService emailService)
+        IEmailService emailService,
+        ISecurityAlertService alertService,
+        ILogIntegrityService integrityService)
     {
         _context = context;
         _logger = logger;
         _emailService = emailService;
+        _alertService = alertService;
+        _integrityService = integrityService;
     }
 
     public async Task LogLoginAttemptAsync(Guid? userId, string email, string ipAddress, string userAgent,
@@ -197,12 +211,13 @@ public class SecurityAuditService : ISecurityAuditService
     {
         try
         {
-            // Aquí se puede implementar la lógica de alertas (email, Slack, etc.)
+            // Usar el nuevo servicio de alertas inteligente
+            var shouldAlert = await _alertService.ShouldAlertAsync(auditLog, cancellationToken);
+            if (shouldAlert) await _alertService.SendAlertAsync(auditLog, cancellationToken);
+
+            // Log crítico tradicional
             _logger.LogCritical("ALERTA CRÍTICA DE SEGURIDAD: {EventType} - {Description} - IP: {IpAddress}",
                 auditLog.EventType, auditLog.Description, auditLog.IpAddress);
-
-            // Ejemplo de envío de email de alerta (se puede habilitar en producción)
-            // await _emailService.SendSecurityAlertAsync(auditLog, cancellationToken);
         }
         catch (Exception ex)
         {
@@ -214,22 +229,52 @@ public class SecurityAuditService : ISecurityAuditService
     {
         try
         {
+            // Agregar hash de integridad al log
+            await _integrityService.AddIntegrityHashAsync(auditLog, cancellationToken);
+
             _context.SecurityAuditLogs.Add(auditLog);
             await _context.SaveChangesAsync(cancellationToken);
 
-            // Enviar alerta si es un evento crítico
+            // Procesar alertas si es necesario
             if (CriticalSeverities.Contains(auditLog.Severity))
-                // Fire and forget - no queremos bloquear la operación principal
                 _ = Task.Run(async () => await AlertCriticalEventAsync(auditLog, cancellationToken), cancellationToken);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error al guardar evento de seguridad: {EventType} - {Description}",
-                auditLog.EventType, auditLog.Description);
+            _logger.LogError(ex, "Error crítico al guardar log de auditoría para evento {EventType}", auditLog.EventType);
+            
+            // Para eventos críticos, propagar la excepción para detener la operación principal
+            if (CriticalAuditEvents.Contains(auditLog.EventType))
+            {
+                _logger.LogCritical(
+                    "FALLO CRÍTICO: No se pudo auditar evento crítico {EventType}. La operación debe ser revertida por seguridad.",
+                    auditLog.EventType);
+                
+                throw new InvalidOperationException(
+                    $"Critical audit failure for event {auditLog.EventType}. Operation cannot proceed without proper audit trail.",
+                    ex);
+            }
+            
+            // Para eventos no críticos, intentar logging alternativo pero no detener la operación
+            await TryAlternativeLoggingAsync(auditLog, ex, cancellationToken);
+        }
+    }
 
-            // En caso de error, al menos logueamos el evento
-            _logger.LogWarning("Evento de seguridad no persistido - {EventType}: {Description} - IP: {IpAddress}",
-                auditLog.EventType, auditLog.Description, auditLog.IpAddress);
+    private async Task TryAlternativeLoggingAsync(SecurityAuditLog auditLog, Exception originalException, CancellationToken cancellationToken)
+    {
+        try
+        {
+            // Log estructurado como respaldo cuando falla la base de datos
+            _logger.LogError(originalException,
+                "AUDIT_BACKUP: {EventType} | User: {UserId} | IP: {IpAddress} | Time: {OccurredAt} | Success: {IsSuccessful} | Description: {Description}",
+                auditLog.EventType, auditLog.UserId, auditLog.IpAddress, auditLog.OccurredAt, auditLog.IsSuccessful, auditLog.Description);
+
+            // TODO: Implementar logging a sistema externo (Azure Monitor, Splunk, etc.)
+            // await _externalLoggingService.LogSecurityEventAsync(auditLog, cancellationToken);
+        }
+        catch (Exception backupEx)
+        {
+            _logger.LogCritical(backupEx, "FALLO TOTAL DE AUDITORÍA: No se pudo registrar evento {EventType} ni en base de datos ni en sistema de respaldo", auditLog.EventType);
         }
     }
 }
