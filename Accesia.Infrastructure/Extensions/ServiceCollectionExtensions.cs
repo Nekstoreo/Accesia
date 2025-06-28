@@ -57,12 +57,12 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<IPasswordHashService, PasswordHashService>();
         services.AddScoped<IPasswordSecurityService, PasswordSecurityService>();
+        services.AddScoped<ICsrfTokenService, CsrfTokenService>();
         services.AddScoped<IEmailService, EmailService>();
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<ISessionService, SessionService>();
         services.AddScoped<IDeviceInfoService, DeviceInfoService>();
         services.AddSingleton<IRateLimitService, RateLimitService>();
-
         // Registrar Memory Cache para rate limiting
         services.AddMemoryCache();
 

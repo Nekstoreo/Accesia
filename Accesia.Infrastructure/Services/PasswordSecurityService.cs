@@ -108,7 +108,7 @@ public class PasswordSecurityService : IPasswordSecurityService
             suggestions.Add("Incluye al menos un número");
         }
 
-        if (!Regex.IsMatch(password, @"[!@#$%^&*(),.?\":{}|<>]"))
+        if (!Regex.IsMatch(password, @"[!@#$%^&*(),.?\"":{}\|<>]"))
         {
             suggestions.Add("Incluye al menos un carácter especial");
         }

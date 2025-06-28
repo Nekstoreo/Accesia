@@ -15,6 +15,8 @@ using Accesia.Application.Features.Authentication.Commands.ConfirmPasswordReset;
 using Accesia.Application.Features.Authentication.Commands.ChangePassword;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
+using Accesia.API.Attributes;
+using Accesia.Application.Common.Interfaces;
 
 namespace Accesia.API.Controllers;
 
@@ -25,11 +27,13 @@ public class AuthController : ControllerBase
 {
     private readonly IMediator _mediator;
     private readonly ILogger<AuthController> _logger;
+    private readonly ICsrfTokenService _csrfTokenService;
 
-    public AuthController(IMediator mediator, ILogger<AuthController> logger)
+    public AuthController(IMediator mediator, ILogger<AuthController> logger, ICsrfTokenService csrfTokenService)
     {
         _mediator = mediator;
         _logger = logger;
+        _csrfTokenService = csrfTokenService;
     }
 
     /// <summary>
@@ -655,6 +659,7 @@ public class AuthController : ControllerBase
     /// Se mantendrá un historial de contraseñas para prevenir reutilización.
     /// </remarks>
     [Authorize]
+    [ValidateCsrf]
     [HttpPost("change-password")]
     [ProducesResponseType(typeof(ChangePasswordResponse), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.BadRequest)]
@@ -743,5 +748,47 @@ public class AuthController : ControllerBase
             return userId;
         }
         throw new UnauthorizedAccessException("No se pudo obtener el userId del token JWT");
+    }
+
+    /// <summary>
+    /// Obtiene un token CSRF para operaciones sensibles
+    /// </summary>
+    /// <returns>Token CSRF para incluir en headers de solicitudes sensibles</returns>
+    [Authorize]
+    [HttpGet("csrf-token")]
+    [ProducesResponseType(typeof(object), (int)HttpStatusCode.OK)]
+    [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.Unauthorized)]
+    public ActionResult GetCsrfToken()
+    {
+        try
+        {
+            var userId = GetUserIdFromJwt();
+            var csrfToken = _csrfTokenService.GenerateToken(userId);
+            
+            _logger.LogDebug("Token CSRF generado para usuario {UserId}", userId);
+            
+            return Ok(new { 
+                csrfToken,
+                expiresIn = 3600, // 1 hora en segundos
+                instructions = "Incluir este token en el header 'X-CSRF-Token' para operaciones sensibles",
+                timestamp = DateTime.UtcNow 
+            });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning(ex, "Intento de obtener token CSRF sin autenticación válida");
+            return Unauthorized(new { 
+                mensaje = ex.Message,
+                timestamp = DateTime.UtcNow 
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error interno al generar token CSRF");
+            return Problem(
+                detail: "Ha ocurrido un error inesperado. Por favor, intenta nuevamente más tarde.",
+                statusCode: 500,
+                title: "Error interno del servidor");
+        }
     }
 }
