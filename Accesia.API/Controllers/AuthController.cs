@@ -10,6 +10,9 @@ using Accesia.Application.Features.Authentication.Commands.VerifyEmail;
 using Accesia.Application.Features.Authentication.Commands.ResendVerificationEmail;
 using Accesia.Application.Features.Authentication.Commands.Logout;
 using Accesia.Application.Features.Authentication.Commands.LogoutAllDevices;
+using Accesia.Application.Features.Authentication.Commands.RequestPasswordReset;
+using Accesia.Application.Features.Authentication.Commands.ConfirmPasswordReset;
+using Accesia.Application.Features.Authentication.Commands.ChangePassword;
 
 namespace Accesia.API.Controllers;
 
@@ -528,6 +531,179 @@ public class AuthController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error interno al procesar logout de todos los dispositivos");
+            return Problem(
+                detail: "Ha ocurrido un error inesperado. Por favor, intenta nuevamente más tarde.",
+                statusCode: 500,
+                title: "Error interno del servidor");
+        }
+    }
+
+    /// <summary>
+    /// Solicita el restablecimiento de contraseña enviando un email con el token
+    /// </summary>
+    /// <param name="request">Datos para solicitar el restablecimiento</param>
+    /// <returns>Respuesta de la solicitud de restablecimiento</returns>
+    [HttpPost("request-password-reset")]
+    [ProducesResponseType(typeof(RequestPasswordResetResponse), (int)HttpStatusCode.OK)]
+    [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.TooManyRequests)]
+    public async Task<ActionResult<RequestPasswordResetResponse>> RequestPasswordReset(
+        [FromBody] RequestPasswordResetRequest request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var clientIp = GetClientIpAddress();
+            
+            var command = new RequestPasswordResetCommand(request.Email, clientIp);
+            var response = await _mediator.Send(command, cancellationToken);
+            
+            _logger.LogInformation("Solicitud de restablecimiento procesada para email {Email}", request.Email);
+            
+            return Ok(response);
+        }
+        catch (RateLimitExceededException ex)
+        {
+            return HandleRateLimitExceeded(ex, "solicitud de restablecimiento");
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "Datos de entrada inválidos para solicitud de restablecimiento");
+            return BadRequest(new { 
+                mensaje = ex.Message,
+                timestamp = DateTime.UtcNow 
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error interno al procesar solicitud de restablecimiento");
+            return Problem(
+                detail: "Ha ocurrido un error inesperado. Por favor, intenta nuevamente más tarde.",
+                statusCode: 500,
+                title: "Error interno del servidor");
+        }
+    }
+
+    /// <summary>
+    /// Confirma el restablecimiento de contraseña usando el token recibido por email
+    /// </summary>
+    /// <param name="request">Datos para confirmar el restablecimiento</param>
+    /// <returns>Respuesta de la confirmación del restablecimiento</returns>
+    [HttpPost("confirm-password-reset")]
+    [ProducesResponseType(typeof(ConfirmPasswordResetResponse), (int)HttpStatusCode.OK)]
+    [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.Conflict)]
+    public async Task<ActionResult<ConfirmPasswordResetResponse>> ConfirmPasswordReset(
+        [FromBody] ConfirmPasswordResetRequest request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var command = new ConfirmPasswordResetCommand(request.Token, request.NewPassword);
+            var response = await _mediator.Send(command, cancellationToken);
+            
+            _logger.LogInformation("Restablecimiento de contraseña confirmado exitosamente");
+            
+            return Ok(response);
+        }
+        catch (InvalidPasswordResetTokenException ex)
+        {
+            _logger.LogWarning(ex, "Token de restablecimiento inválido");
+            return Problem(
+                detail: ex.Message,
+                statusCode: 404,
+                title: "Token de restablecimiento inválido");
+        }
+        catch (PasswordRecentlyUsedException ex)
+        {
+            _logger.LogWarning(ex, "Intento de reutilizar contraseña reciente");
+            return Conflict(new { 
+                mensaje = ex.Message,
+                timestamp = DateTime.UtcNow 
+            });
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "Datos de entrada inválidos para confirmación de restablecimiento");
+            return BadRequest(new { 
+                mensaje = ex.Message,
+                timestamp = DateTime.UtcNow 
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error interno al confirmar restablecimiento");
+            return Problem(
+                detail: "Ha ocurrido un error inesperado. Por favor, intenta nuevamente más tarde.",
+                statusCode: 500,
+                title: "Error interno del servidor");
+        }
+    }
+
+    /// <summary>
+    /// Cambia la contraseña de un usuario autenticado
+    /// </summary>
+    /// <param name="request">Datos para el cambio de contraseña</param>
+    /// <returns>Respuesta del cambio de contraseña</returns>
+    [HttpPost("change-password")]
+    [ProducesResponseType(typeof(ChangePasswordResponse), (int)HttpStatusCode.OK)]
+    [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.Unauthorized)]
+    [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.Conflict)]
+    public async Task<ActionResult<ChangePasswordResponse>> ChangePassword(
+        [FromBody] ChangePasswordRequest request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            // TODO: Obtener userId del token JWT autenticado
+            // var userId = GetUserIdFromJwt();
+            var userId = Guid.Empty; // Temporal - se debe implementar autenticación
+            
+            var command = new ChangePasswordCommand(userId, request.CurrentPassword, request.NewPassword);
+            var response = await _mediator.Send(command, cancellationToken);
+            
+            _logger.LogInformation("Contraseña cambiada exitosamente para usuario {UserId}", userId);
+            
+            return Ok(response);
+        }
+        catch (UserNotFoundException ex)
+        {
+            _logger.LogWarning(ex, "Usuario no encontrado para cambio de contraseña");
+            return Problem(
+                detail: ex.Message,
+                statusCode: 404,
+                title: "Usuario no encontrado");
+        }
+        catch (CurrentPasswordIncorrectException ex)
+        {
+            _logger.LogWarning(ex, "Contraseña actual incorrecta");
+            return Problem(
+                detail: ex.Message,
+                statusCode: 401,
+                title: "Contraseña actual incorrecta");
+        }
+        catch (PasswordRecentlyUsedException ex)
+        {
+            _logger.LogWarning(ex, "Intento de reutilizar contraseña reciente");
+            return Conflict(new { 
+                mensaje = ex.Message,
+                timestamp = DateTime.UtcNow 
+            });
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "Datos de entrada inválidos para cambio de contraseña");
+            return BadRequest(new { 
+                mensaje = ex.Message,
+                timestamp = DateTime.UtcNow 
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error interno al cambiar contraseña");
             return Problem(
                 detail: "Ha ocurrido un error inesperado. Por favor, intenta nuevamente más tarde.",
                 statusCode: 500,
