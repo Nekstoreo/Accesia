@@ -48,6 +48,7 @@ public class User : AuditableEntity
     public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
     public ICollection<PasswordHistory> PasswordHistories { get; set; } = new List<PasswordHistory>();
     public ICollection<UserAuditLog> AuditLogs { get; set; } = new List<UserAuditLog>();
+    public UserSettings? Settings { get; set; }
 
     // Constructor privado para EF Core
     private User() { }
@@ -271,5 +272,120 @@ public class User : AuditableEntity
                EmailVerificationToken == token &&
                EmailVerificationTokenExpiresAt.HasValue &&
                EmailVerificationTokenExpiresAt > DateTime.UtcNow;
+    }
+
+    public void ActivateAccount()
+    {
+        if (Status == UserStatus.MarkedForDeletion)
+            throw new InvalidOperationException("No se puede activar una cuenta marcada para eliminación.");
+
+        Status = UserStatus.Active;
+        UnlockAccount();
+    }
+
+    public void DeactivateAccount()
+    {
+        if (Status == UserStatus.MarkedForDeletion)
+            throw new InvalidOperationException("No se puede desactivar una cuenta marcada para eliminación.");
+
+        Status = UserStatus.Inactive;
+        
+        // Cerrar todas las sesiones activas
+        foreach (var session in Sessions.Where(s => s.Status == SessionStatus.Active))
+        {
+            session.Revoke();
+        }
+    }
+
+    public void BlockAccount(string reason = "")
+    {
+        if (Status == UserStatus.MarkedForDeletion)
+            throw new InvalidOperationException("No se puede bloquear una cuenta marcada para eliminación.");
+
+        Status = UserStatus.Blocked;
+        
+        // Cerrar todas las sesiones activas
+        foreach (var session in Sessions.Where(s => s.Status == SessionStatus.Active))
+        {
+            session.Revoke();
+        }
+    }
+
+    public void MarkForDeletion()
+    {
+        Status = UserStatus.MarkedForDeletion;
+        
+        // Cerrar todas las sesiones activas
+        foreach (var session in Sessions.Where(s => s.Status == SessionStatus.Active))
+        {
+            session.Revoke();
+        }
+    }
+
+    public void RestoreFromDeletion()
+    {
+        if (Status != UserStatus.MarkedForDeletion)
+            throw new InvalidOperationException("La cuenta no está marcada para eliminación.");
+
+        Status = UserStatus.Inactive; // Requiere reactivación manual
+    }
+
+    public bool CanPerformAction()
+    {
+        return Status == UserStatus.Active && !IsAccountLocked();
+    }
+
+    public bool CanLogin()
+    {
+        return Status == UserStatus.Active && !IsAccountLocked() && IsEmailVerified;
+    }
+
+    public bool RequiresReactivation()
+    {
+        return Status == UserStatus.Inactive;
+    }
+
+    public string GetStatusDescription()
+    {
+        return Status switch
+        {
+            UserStatus.Active => "Cuenta activa",
+            UserStatus.Inactive => "Cuenta inactiva - requiere reactivación",
+            UserStatus.Blocked => "Cuenta bloqueada",
+            UserStatus.PendingConfirmation => "Pendiente de confirmación de email",
+            UserStatus.EmailPendingVerification => "Verificación de email pendiente",
+            UserStatus.MarkedForDeletion => "Marcada para eliminación",
+            _ => "Estado desconocido"
+        };
+    }
+
+    public IEnumerable<UserStatus> GetAllowedTransitions()
+    {
+        return Status switch
+        {
+            UserStatus.Active => new[] { UserStatus.Inactive, UserStatus.Blocked, UserStatus.MarkedForDeletion },
+            UserStatus.Inactive => new[] { UserStatus.Active, UserStatus.Blocked, UserStatus.MarkedForDeletion },
+            UserStatus.Blocked => new[] { UserStatus.Active, UserStatus.Inactive, UserStatus.MarkedForDeletion },
+            UserStatus.PendingConfirmation => new[] { UserStatus.Active, UserStatus.Blocked, UserStatus.MarkedForDeletion },
+            UserStatus.EmailPendingVerification => new[] { UserStatus.Active, UserStatus.Blocked, UserStatus.MarkedForDeletion },
+            UserStatus.MarkedForDeletion => new[] { UserStatus.Inactive },
+            _ => Array.Empty<UserStatus>()
+        };
+    }
+
+    public bool CanTransitionTo(UserStatus newStatus)
+    {
+        return GetAllowedTransitions().Contains(newStatus);
+    }
+
+    public void EnsureSettingsExist()
+    {
+        Settings ??= UserSettings.CreateDefault(Id);
+    }
+
+    public UserSettings GetSettings()
+    {
+        EnsureSettingsExist();
+        return Settings!;
     }
 }
