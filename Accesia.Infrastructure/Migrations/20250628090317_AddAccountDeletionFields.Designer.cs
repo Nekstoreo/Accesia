@@ -3,6 +3,7 @@ using System;
 using Accesia.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Accesia.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250628090317_AddAccountDeletionFields")]
+    partial class AddAccountDeletionFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -420,8 +423,7 @@ namespace Accesia.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<string>("AccountDeletionToken")
-                        .HasMaxLength(512)
-                        .HasColumnType("character varying(512)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("AccountDeletionTokenExpiresAt")
                         .HasColumnType("timestamp with time zone");
@@ -433,8 +435,7 @@ namespace Accesia.Infrastructure.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("DeletionReason")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
+                        .HasColumnType("text");
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -521,16 +522,12 @@ namespace Accesia.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AccountDeletionToken");
-
                     b.HasIndex("CreatedAt");
 
                     b.HasIndex("Email")
                         .IsUnique();
 
                     b.HasIndex("LastLoginAt");
-
-                    b.HasIndex("MarkedForDeletionAt");
 
                     b.HasIndex("Status");
 

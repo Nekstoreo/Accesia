@@ -40,8 +40,8 @@ namespace Accesia.Infrastructure.Migrations
                     RequirePasswordChangeOn2FADisable = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
                     LogoutOnPasswordChange = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
                     SessionTimeoutMinutes = table.Column<int>(type: "integer", nullable: false, defaultValue: 60),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "GETUTCDATE()"),
-                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true, defaultValueSql: "GETUTCDATE()"),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "NOW()"),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true, defaultValueSql: "NOW()"),
                     CreatedBy = table.Column<string>(type: "text", nullable: true),
                     UpdatedBy = table.Column<string>(type: "text", nullable: true)
                 },
