@@ -6,8 +6,8 @@ public enum UserStatus
     Active = 1,
     Inactive = 2,
     Pending = 3,
-    PendingConfirmation = 7,
-    Blocked = 4,
-    EmailPendingVerification = 5,
-    MarkedForDeletion = 6
+    PendingConfirmation = 4,
+    Blocked = 5,
+    EmailPendingVerification = 6,
+    MarkedForDeletion = 7
 }
