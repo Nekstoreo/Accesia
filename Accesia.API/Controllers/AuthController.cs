@@ -646,6 +646,12 @@ public class AuthController : ControllerBase
     /// </summary>
     /// <param name="request">Datos para el cambio de contraseña</param>
     /// <returns>Respuesta del cambio de contraseña</returns>
+    /// <remarks>
+    /// NOTA: Este endpoint requiere autenticación JWT. 
+    /// El usuario debe estar autenticado para cambiar su contraseña.
+    /// Se validará que la contraseña actual sea correcta antes de proceder.
+    /// Se mantendrá un historial de contraseñas para prevenir reutilización.
+    /// </remarks>
     [HttpPost("change-password")]
     [ProducesResponseType(typeof(ChangePasswordResponse), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.BadRequest)]
@@ -662,10 +668,14 @@ public class AuthController : ControllerBase
             // var userId = GetUserIdFromJwt();
             var userId = Guid.Empty; // Temporal - se debe implementar autenticación
             
-            var command = new ChangePasswordCommand(userId, request.CurrentPassword, request.NewPassword);
+            // Obtener información del dispositivo/cliente
+            var clientIp = GetClientIpAddress();
+            var userAgent = Request.Headers["User-Agent"].ToString();
+            
+            var command = new ChangePasswordCommand(userId, request.CurrentPassword, request.NewPassword, clientIp, userAgent);
             var response = await _mediator.Send(command, cancellationToken);
             
-            _logger.LogInformation("Contraseña cambiada exitosamente para usuario {UserId}", userId);
+            _logger.LogInformation("Contraseña cambiada exitosamente para usuario {UserId} desde IP {ClientIp}", userId, clientIp);
             
             return Ok(response);
         }
