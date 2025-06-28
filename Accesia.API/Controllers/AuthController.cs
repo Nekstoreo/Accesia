@@ -13,6 +13,8 @@ using Accesia.Application.Features.Authentication.Commands.LogoutAllDevices;
 using Accesia.Application.Features.Authentication.Commands.RequestPasswordReset;
 using Accesia.Application.Features.Authentication.Commands.ConfirmPasswordReset;
 using Accesia.Application.Features.Authentication.Commands.ChangePassword;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace Accesia.API.Controllers;
 
@@ -647,11 +649,12 @@ public class AuthController : ControllerBase
     /// <param name="request">Datos para el cambio de contraseña</param>
     /// <returns>Respuesta del cambio de contraseña</returns>
     /// <remarks>
-    /// NOTA: Este endpoint requiere autenticación JWT. 
+    /// Este endpoint requiere autenticación JWT. 
     /// El usuario debe estar autenticado para cambiar su contraseña.
     /// Se validará que la contraseña actual sea correcta antes de proceder.
     /// Se mantendrá un historial de contraseñas para prevenir reutilización.
     /// </remarks>
+    [Authorize]
     [HttpPost("change-password")]
     [ProducesResponseType(typeof(ChangePasswordResponse), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.BadRequest)]
@@ -664,9 +667,8 @@ public class AuthController : ControllerBase
     {
         try
         {
-            // TODO: Obtener userId del token JWT autenticado
-            // var userId = GetUserIdFromJwt();
-            var userId = Guid.Empty; // Temporal - se debe implementar autenticación
+            // Obtener userId del token JWT autenticado
+            var userId = GetUserIdFromJwt();
             
             // Obtener información del dispositivo/cliente
             var clientIp = GetClientIpAddress();
@@ -719,5 +721,18 @@ public class AuthController : ControllerBase
                 statusCode: 500,
                 title: "Error interno del servidor");
         }
+    }
+
+    private Guid GetUserIdFromJwt()
+    {
+        // Implementa la lógica para obtener el userId del token JWT autenticado
+        // Esto puede variar dependiendo de cómo se maneje la autenticación en tu aplicación
+        // Aquí se asume que el userId se encuentra en el claim "sub" del token
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim != null && Guid.TryParse(userIdClaim.Value, out Guid userId))
+        {
+            return userId;
+        }
+        throw new UnauthorizedAccessException("No se pudo obtener el userId del token JWT");
     }
 }
