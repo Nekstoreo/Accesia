@@ -29,7 +29,7 @@ public class RefreshTokenHandler : IRequestHandler<RefreshTokenCommand, RefreshT
         _rateLimitService = rateLimitService;
         _logger = logger;
     }
-
+    
     public async Task<RefreshTokenResponse> Handle(RefreshTokenCommand request, CancellationToken cancellationToken)
     {
         // Verificar rate limiting
@@ -103,7 +103,7 @@ public class RefreshTokenHandler : IRequestHandler<RefreshTokenCommand, RefreshT
         return new RefreshTokenResponse
         {
             AccessToken = accessToken,
-            RefreshToken = session.RefreshToken,
+            RefreshToken = session.RefreshToken ?? string.Empty,
             TokenType = "Bearer",
             ExpiresIn = (int)(tokenExpiration - DateTime.UtcNow).TotalSeconds,
             ExpiresAt = tokenExpiration

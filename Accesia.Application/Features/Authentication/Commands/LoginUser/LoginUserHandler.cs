@@ -126,7 +126,7 @@ public class LoginUserHandler : IRequestHandler<LoginUserCommand, LoginResponse>
         return new LoginResponse
         {
             AccessToken = accessToken,
-            RefreshToken = session.RefreshToken,
+            RefreshToken = session.RefreshToken ?? string.Empty,
             TokenType = "Bearer",
             ExpiresIn = (int)(tokenExpiration - DateTime.UtcNow).TotalSeconds,
             User = new UserInfoDto
