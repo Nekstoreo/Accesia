@@ -1,5 +1,5 @@
-using MediatR;
 using Accesia.Application.Features.Authentication.DTOs;
+using MediatR;
 
 namespace Accesia.Application.Features.Authentication.Commands.LoginUser;
 
@@ -24,4 +24,4 @@ public record LoginUserCommand : IRequest<LoginResponse>
             UserAgent = userAgent
         };
     }
-} 
+}

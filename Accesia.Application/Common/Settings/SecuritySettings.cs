@@ -101,7 +101,10 @@ public class InputValidationSettings
     public bool EnableCsrfProtection { get; set; } = true;
     public bool StrictInputSanitization { get; set; } = true;
     public HashSet<string> AllowedHtmlTags { get; set; } = new();
-    public HashSet<string> AllowedFileExtensions { get; set; } = new() { ".jpg", ".jpeg", ".png", ".pdf", ".doc", ".docx" };
+
+    public HashSet<string> AllowedFileExtensions { get; set; } =
+        new() { ".jpg", ".jpeg", ".png", ".pdf", ".doc", ".docx" };
+
     public int MaxInputLength { get; set; } = 10000;
     public int MaxFileSize { get; set; } = 5242880; // 5MB
     public Dictionary<string, string> FieldWhitelist { get; set; } = new();
@@ -115,6 +118,7 @@ public class SecurityAuditSettings
     public bool EnableGeoLocationTracking { get; set; } = false;
     public bool EnableDeviceFingerprinting { get; set; } = true;
     public int LogRetentionDays { get; set; } = 90;
+
     public HashSet<string> CriticalEvents { get; set; } = new()
     {
         "LoginAttempt",
@@ -125,6 +129,7 @@ public class SecurityAuditSettings
         "UnauthorizedAccess",
         "RateLimitExceeded"
     };
+
     public Dictionary<string, string> SeverityLevels { get; set; } = new()
     {
         ["LoginAttempt"] = "Medium",
@@ -142,15 +147,17 @@ public class AlertingSettings
     public bool EnableEmailAlerts { get; set; } = false;
     public bool EnableSlackAlerts { get; set; } = false;
     public bool EnableSmsAlerts { get; set; } = false;
+
     public HashSet<string> AlertOnEventTypes { get; set; } = new()
     {
         "SuspiciousActivity",
         "AccountDeletion",
         "UnauthorizedAccess"
     };
+
     public HashSet<string> AlertOnSeverities { get; set; } = new() { "Critical", "High" };
     public int AlertThrottleMinutes { get; set; } = 15;
     public List<string> AlertRecipients { get; set; } = new();
     public string SlackWebhookUrl { get; set; } = string.Empty;
     public Dictionary<string, object> CustomAlertSettings { get; set; } = new();
-} 
+}

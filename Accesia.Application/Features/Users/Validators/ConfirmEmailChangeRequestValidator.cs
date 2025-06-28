@@ -1,5 +1,5 @@
-using FluentValidation;
 using Accesia.Application.Features.Users.DTOs;
+using FluentValidation;
 
 namespace Accesia.Application.Features.Users.Validators;
 
@@ -21,4 +21,4 @@ public class ConfirmEmailChangeRequestValidator : AbstractValidator<ConfirmEmail
             .Length(32, 128)
             .WithMessage("El token de verificación tiene un formato inválido");
     }
-} 
+}

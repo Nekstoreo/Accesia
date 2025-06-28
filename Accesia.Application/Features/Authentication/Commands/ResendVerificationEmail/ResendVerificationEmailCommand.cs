@@ -1,5 +1,5 @@
-using MediatR;
 using Accesia.Application.Features.Authentication.DTOs;
+using MediatR;
 
 namespace Accesia.Application.Features.Authentication.Commands.ResendVerificationEmail;
 
@@ -8,7 +8,8 @@ public class ResendVerificationEmailCommand : IRequest<ResendVerificationRespons
     public string Email { get; set; } = string.Empty;
     public string? ClientIpAddress { get; set; }
 
-    public static ResendVerificationEmailCommand FromRequest(ResendVerificationRequest request, string? ipAddress = null)
+    public static ResendVerificationEmailCommand FromRequest(ResendVerificationRequest request,
+        string? ipAddress = null)
     {
         return new ResendVerificationEmailCommand
         {

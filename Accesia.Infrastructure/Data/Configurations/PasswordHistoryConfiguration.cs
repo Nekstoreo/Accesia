@@ -1,6 +1,6 @@
+using Accesia.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Accesia.Domain.Entities;
 
 namespace Accesia.Infrastructure.Data.Configurations;
 
@@ -33,4 +33,4 @@ public class PasswordHistoryConfiguration : IEntityTypeConfiguration<PasswordHis
         builder.HasIndex(ph => ph.UserId);
         builder.HasIndex(ph => ph.PasswordChangedAt);
     }
-} 
+}

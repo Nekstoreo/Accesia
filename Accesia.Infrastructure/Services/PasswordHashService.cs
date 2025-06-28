@@ -1,5 +1,4 @@
 using Accesia.Application.Common.Interfaces;
-using BCrypt.Net;
 
 namespace Accesia.Infrastructure.Services;
 
@@ -34,4 +33,4 @@ public class PasswordHashService : IPasswordHashService
             return false;
         }
     }
-} 
+}

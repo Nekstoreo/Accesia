@@ -4,27 +4,27 @@ namespace Accesia.Application.Common.Exceptions;
 
 public class AccountStateException : Exception
 {
-    public UserStatus CurrentStatus { get; }
-    public string UserId { get; }
-
-    public AccountStateException(string userId, UserStatus currentStatus, string message) 
+    public AccountStateException(string userId, UserStatus currentStatus, string message)
         : base(message)
     {
         UserId = userId;
         CurrentStatus = currentStatus;
     }
 
-    public AccountStateException(string userId, UserStatus currentStatus, string message, Exception innerException) 
+    public AccountStateException(string userId, UserStatus currentStatus, string message, Exception innerException)
         : base(message, innerException)
     {
         UserId = userId;
         CurrentStatus = currentStatus;
     }
+
+    public UserStatus CurrentStatus { get; }
+    public string UserId { get; }
 }
 
 public class AccountInactiveException : AccountStateException
 {
-    public AccountInactiveException(string userId) 
+    public AccountInactiveException(string userId)
         : base(userId, UserStatus.Inactive, "La cuenta está inactiva y requiere reactivación.")
     {
     }
@@ -32,35 +32,37 @@ public class AccountInactiveException : AccountStateException
 
 public class AccountBlockedException : AccountStateException
 {
-    public DateTime? LockedUntil { get; }
-
-    public AccountBlockedException(string userId, DateTime? lockedUntil = null) 
-        : base(userId, UserStatus.Blocked, 
-            lockedUntil.HasValue 
+    public AccountBlockedException(string userId, DateTime? lockedUntil = null)
+        : base(userId, UserStatus.Blocked,
+            lockedUntil.HasValue
                 ? $"La cuenta está bloqueada hasta {lockedUntil:yyyy-MM-dd HH:mm:ss} UTC"
                 : "La cuenta está bloqueada")
     {
         LockedUntil = lockedUntil;
     }
+
+    public DateTime? LockedUntil { get; }
 }
 
 public class AccountMarkedForDeletionException : AccountStateException
 {
-    public AccountMarkedForDeletionException(string userId) 
-        : base(userId, UserStatus.MarkedForDeletion, "La cuenta está marcada para eliminación y no puede realizar esta acción.")
+    public AccountMarkedForDeletionException(string userId)
+        : base(userId, UserStatus.MarkedForDeletion,
+            "La cuenta está marcada para eliminación y no puede realizar esta acción.")
     {
     }
 }
 
 public class InvalidStateTransitionException : AccountStateException
 {
-    public UserStatus TargetStatus { get; }
-
-    public InvalidStateTransitionException(string userId, UserStatus currentStatus, UserStatus targetStatus) 
-        : base(userId, currentStatus, $"No se puede cambiar el estado de '{GetStatusDescription(currentStatus)}' a '{GetStatusDescription(targetStatus)}'.")
+    public InvalidStateTransitionException(string userId, UserStatus currentStatus, UserStatus targetStatus)
+        : base(userId, currentStatus,
+            $"No se puede cambiar el estado de '{GetStatusDescription(currentStatus)}' a '{GetStatusDescription(targetStatus)}'.")
     {
         TargetStatus = targetStatus;
     }
+
+    public UserStatus TargetStatus { get; }
 
     private static string GetStatusDescription(UserStatus status)
     {
@@ -75,4 +77,4 @@ public class InvalidStateTransitionException : AccountStateException
             _ => "Desconocido"
         };
     }
-} 
+}

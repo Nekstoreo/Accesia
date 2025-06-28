@@ -5,18 +5,9 @@ namespace Accesia.Domain.Entities;
 
 public class PasswordHistory : AuditableEntity
 {
-    [Required]
-    public Guid UserId { get; set; }
-    
-    [Required]
-    public string PasswordHash { get; set; } = string.Empty;
-    
-    [Required]
-    public DateTime PasswordChangedAt { get; set; }
-    
-    public virtual User User { get; set; } = null!;
-
-    private PasswordHistory() { }
+    private PasswordHistory()
+    {
+    }
 
     public PasswordHistory(Guid userId, string passwordHash)
     {
@@ -25,8 +16,16 @@ public class PasswordHistory : AuditableEntity
         PasswordChangedAt = DateTime.UtcNow;
     }
 
+    [Required] public Guid UserId { get; set; }
+
+    [Required] public string PasswordHash { get; set; } = string.Empty;
+
+    [Required] public DateTime PasswordChangedAt { get; set; }
+
+    public virtual User User { get; set; } = null!;
+
     public static PasswordHistory Create(Guid userId, string passwordHash)
     {
         return new PasswordHistory(userId, passwordHash);
     }
-} 
+}

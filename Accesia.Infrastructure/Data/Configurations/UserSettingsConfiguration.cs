@@ -1,7 +1,7 @@
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Accesia.Domain.Entities;
 using Accesia.Domain.Enums;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Accesia.Infrastructure.Data.Configurations;
 
@@ -140,4 +140,4 @@ public class UserSettingsConfiguration : IEntityTypeConfiguration<UserSettings>
         builder.Property(us => us.UpdatedAt)
             .HasDefaultValueSql("GETUTCDATE()");
     }
-} 
+}

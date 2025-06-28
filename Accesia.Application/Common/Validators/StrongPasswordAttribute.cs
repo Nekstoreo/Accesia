@@ -17,6 +17,7 @@ public class StrongPasswordAttribute : ValidationAttribute
 
     public override string FormatErrorMessage(string name)
     {
-        return "La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula, un número y un carácter especial";
+        return
+            "La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula, un número y un carácter especial";
     }
 }

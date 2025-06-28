@@ -1,6 +1,6 @@
-using FluentValidation;
 using Accesia.Application.Features.Users.DTOs;
 using Accesia.Domain.Enums;
+using FluentValidation;
 
 namespace Accesia.Application.Features.Users.Validators;
 
@@ -31,4 +31,4 @@ public class ChangeAccountStatusRequestValidator : AbstractValidator<ChangeAccou
         // Solo permitir ciertos estados para transiciones manuales
         return status is UserStatus.Active or UserStatus.Inactive or UserStatus.Blocked or UserStatus.MarkedForDeletion;
     }
-} 
+}

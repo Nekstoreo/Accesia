@@ -2,11 +2,11 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
 using Accesia.Application.Common.Interfaces;
 using Accesia.Application.Common.Settings;
 using Accesia.Domain.Entities;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Accesia.Infrastructure.Services;
 
@@ -34,16 +34,10 @@ public class JwtTokenService : IJwtTokenService
         };
 
         // Agregar roles
-        foreach (var role in roles)
-        {
-            claims.Add(new Claim(ClaimTypes.Role, role));
-        }
+        foreach (var role in roles) claims.Add(new Claim(ClaimTypes.Role, role));
 
         // Agregar permisos
-        foreach (var permission in permissions)
-        {
-            claims.Add(new Claim("permission", permission));
-        }
+        foreach (var permission in permissions) claims.Add(new Claim("permission", permission));
 
         var tokenDescriptor = new SecurityTokenDescriptor
         {
@@ -51,7 +45,8 @@ public class JwtTokenService : IJwtTokenService
             Expires = DateTime.UtcNow.AddMinutes(_jwtSettings.ExpirationInMinutes),
             Issuer = _jwtSettings.Issuer,
             Audience = _jwtSettings.Audience,
-            SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+            SigningCredentials =
+                new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
         };
 
         var token = tokenHandler.CreateToken(tokenDescriptor);
@@ -70,4 +65,4 @@ public class JwtTokenService : IJwtTokenService
     {
         return DateTime.UtcNow.AddMinutes(_jwtSettings.ExpirationInMinutes);
     }
-} 
+}

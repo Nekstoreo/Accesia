@@ -17,4 +17,4 @@ public class GetAccountStatusResponse
     public DateTime? EmailVerifiedAt { get; set; }
     public DateTime? LastLoginAt { get; set; }
     public List<UserStatus> AllowedTransitions { get; set; } = new();
-} 
+}

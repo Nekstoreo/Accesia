@@ -30,4 +30,4 @@ public record SessionInfoDto
     public required string DeviceInfo { get; init; }
     public required string LocationInfo { get; init; }
     public required bool IsKnownDevice { get; init; }
-} 
+}

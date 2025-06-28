@@ -1,15 +1,19 @@
-using Microsoft.EntityFrameworkCore;
-using Accesia.Domain.Entities;
-using Accesia.Domain.Common;
 using System.Reflection;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 using Accesia.Application.Common.Interfaces;
+using Accesia.Domain.Common;
+using Accesia.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace Accesia.Infrastructure.Data;
 
 public class ApplicationDbContext : DbContext, IApplicationDbContext
 {
+    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+        : base(options)
+    {
+    }
+
     // DbSets para todas las entidades principales
     public DbSet<User> Users { get; set; }
     public DbSet<Session> Sessions { get; set; }
@@ -22,9 +26,23 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<UserSettings> UserSettings { get; set; }
     public DbSet<SecurityAuditLog> SecurityAuditLogs { get; set; }
 
-    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) 
-        : base(options)
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
+        // Auditoría automática para entidades auditables
+        foreach (var entry in ChangeTracker.Entries<AuditableEntity>())
+            switch (entry.State)
+            {
+                case EntityState.Added:
+                    entry.Entity.CreatedAt = DateTime.UtcNow;
+                    entry.Entity.CreatedBy ??= "Sistema";
+                    break;
+                case EntityState.Modified:
+                    entry.Entity.UpdatedAt = DateTime.UtcNow;
+                    entry.Entity.UpdatedBy ??= "Sistema";
+                    break;
+            }
+
+        return await base.SaveChangesAsync(cancellationToken);
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -42,32 +60,11 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
         base.OnConfiguring(optionsBuilder);
     }
 
-    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
-    {
-        // Auditoría automática para entidades auditables
-        foreach (var entry in ChangeTracker.Entries<AuditableEntity>())
-        {
-            switch (entry.State)
-            {
-                case EntityState.Added:
-                    entry.Entity.CreatedAt = DateTime.UtcNow;
-                    entry.Entity.CreatedBy ??= "Sistema";
-                    break;
-                case EntityState.Modified:
-                    entry.Entity.UpdatedAt = DateTime.UtcNow;
-                    entry.Entity.UpdatedBy ??= "Sistema";
-                    break;
-            }
-        }
-
-        return await base.SaveChangesAsync(cancellationToken);
-    }
-
     // Interceptor personalizado para auditoría y logging
     private class AuditInterceptor : SaveChangesInterceptor
     {
         public override InterceptionResult<int> SavingChanges(
-            DbContextEventData eventData, 
+            DbContextEventData eventData,
             InterceptionResult<int> result)
         {
             // Lógica de logging o auditoría adicional si es necesario

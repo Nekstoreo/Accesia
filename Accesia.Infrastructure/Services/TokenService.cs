@@ -1,6 +1,5 @@
-using Accesia.Application.Common.Interfaces;
 using System.Security.Cryptography;
-using System.Text;
+using Accesia.Application.Common.Interfaces;
 
 namespace Accesia.Infrastructure.Services;
 
@@ -24,11 +23,11 @@ public class TokenService : ITokenService
         using var rng = RandomNumberGenerator.Create();
         var bytes = new byte[length];
         rng.GetBytes(bytes);
-        
+
         // Convertir a string base64 URL-safe
         return Convert.ToBase64String(bytes)
             .Replace('+', '-')
             .Replace('/', '_')
             .Replace("=", "");
     }
-} 
+}

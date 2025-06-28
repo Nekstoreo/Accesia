@@ -1,5 +1,5 @@
-using MediatR;
 using Accesia.Application.Features.Authentication.DTOs;
+using MediatR;
 
 namespace Accesia.Application.Features.Authentication.Commands.LogoutAllDevices;
 
@@ -9,7 +9,8 @@ public record LogoutAllDevicesCommand : IRequest<LogoutAllDevicesResponse>
     public required string IpAddress { get; init; }
     public required string UserAgent { get; init; }
 
-    public static LogoutAllDevicesCommand FromRequest(LogoutAllDevicesRequest request, string ipAddress, string userAgent)
+    public static LogoutAllDevicesCommand FromRequest(LogoutAllDevicesRequest request, string ipAddress,
+        string userAgent)
     {
         return new LogoutAllDevicesCommand
         {
@@ -18,4 +19,4 @@ public record LogoutAllDevicesCommand : IRequest<LogoutAllDevicesResponse>
             UserAgent = userAgent
         };
     }
-} 
+}

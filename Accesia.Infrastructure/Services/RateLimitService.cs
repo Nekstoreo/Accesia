@@ -25,13 +25,12 @@ public class RateLimitService : IRateLimitService
         _logger = logger;
     }
 
-    public Task<bool> CanPerformActionAsync(string ipAddress, string action, CancellationToken cancellationToken = default)
+    public Task<bool> CanPerformActionAsync(string ipAddress, string action,
+        CancellationToken cancellationToken = default)
     {
         if (!_rateLimits.TryGetValue(action, out var config))
-        {
             // Si no hay configuración para la acción, permitimos la operación
             return Task.FromResult(true);
-        }
 
         var key = GetCacheKey(ipAddress, action);
         var attempts = _cache.Get<List<DateTime>>(key) ?? new List<DateTime>();
@@ -41,12 +40,11 @@ public class RateLimitService : IRateLimitService
         attempts.RemoveAll(dt => dt < cutoff);
 
         var canPerform = attempts.Count < config.MaxAttempts;
-        
+
         if (!canPerform)
-        {
-            _logger.LogWarning("Rate limit excedido para IP {IpAddress} en acción {Action}. Intentos: {Attempts}/{MaxAttempts}", 
+            _logger.LogWarning(
+                "Rate limit excedido para IP {IpAddress} en acción {Action}. Intentos: {Attempts}/{MaxAttempts}",
                 ipAddress, action, attempts.Count, config.MaxAttempts);
-        }
 
         return Task.FromResult(canPerform);
     }
@@ -70,13 +68,14 @@ public class RateLimitService : IRateLimitService
         var expiration = TimeSpan.FromMinutes(config.WindowMinutes + 5);
         _cache.Set(key, attempts, expiration);
 
-        _logger.LogDebug("Registrado intento de {Action} desde IP {IpAddress}. Total intentos: {Attempts}", 
+        _logger.LogDebug("Registrado intento de {Action} desde IP {IpAddress}. Total intentos: {Attempts}",
             action, ipAddress, attempts.Count);
 
         return Task.CompletedTask;
     }
 
-    public Task<TimeSpan> GetRemainingCooldownAsync(string ipAddress, string action, CancellationToken cancellationToken = default)
+    public Task<TimeSpan> GetRemainingCooldownAsync(string ipAddress, string action,
+        CancellationToken cancellationToken = default)
     {
         if (!_rateLimits.TryGetValue(action, out var config))
             return Task.FromResult(TimeSpan.Zero);
@@ -105,4 +104,4 @@ public class RateLimitService : IRateLimitService
         public int MaxAttempts { get; set; }
         public int WindowMinutes { get; set; }
     }
-} 
+}

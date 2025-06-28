@@ -1,17 +1,17 @@
-using MediatR;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using Accesia.Application.Common.Interfaces;
 using Accesia.Application.Features.Authentication.DTOs;
 using Accesia.Domain.Enums;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Accesia.Application.Features.Authentication.Commands.Logout;
 
 public class LogoutHandler : IRequestHandler<LogoutCommand, LogoutResponse>
 {
     private readonly IApplicationDbContext _context;
-    private readonly ISessionService _sessionService;
     private readonly ILogger<LogoutHandler> _logger;
+    private readonly ISessionService _sessionService;
 
     public LogoutHandler(
         IApplicationDbContext context,
@@ -32,9 +32,9 @@ public class LogoutHandler : IRequestHandler<LogoutCommand, LogoutResponse>
 
         if (session == null)
         {
-            _logger.LogWarning("Intento de logout con token de sesión inválido desde IP: {IpAddress}", 
+            _logger.LogWarning("Intento de logout con token de sesión inválido desde IP: {IpAddress}",
                 request.IpAddress);
-            
+
             return new LogoutResponse
             {
                 Message = "Sesión no encontrada o ya cerrada",
@@ -46,9 +46,9 @@ public class LogoutHandler : IRequestHandler<LogoutCommand, LogoutResponse>
         // Verificar que la sesión esté activa
         if (session.Status != SessionStatus.Active)
         {
-            _logger.LogWarning("Intento de logout en sesión no activa {SessionToken} para usuario {UserId}", 
+            _logger.LogWarning("Intento de logout en sesión no activa {SessionToken} para usuario {UserId}",
                 session.SessionToken, session.UserId);
-                
+
             return new LogoutResponse
             {
                 Message = "La sesión ya está cerrada",
@@ -58,14 +58,14 @@ public class LogoutHandler : IRequestHandler<LogoutCommand, LogoutResponse>
         }
 
         // Registrar actividad de logout
-        _logger.LogInformation("Iniciando logout para usuario {Email} con sesión {SessionToken} desde IP {IpAddress}", 
+        _logger.LogInformation("Iniciando logout para usuario {Email} con sesión {SessionToken} desde IP {IpAddress}",
             session.User.Email.Value, session.SessionToken, request.IpAddress);
 
         // Invalidar la sesión
         await _sessionService.RevokeSessionAsync(request.SessionToken, cancellationToken);
 
         // Registrar logout exitoso
-        _logger.LogInformation("Logout exitoso para usuario {Email}. Sesión {SessionToken} invalidada", 
+        _logger.LogInformation("Logout exitoso para usuario {Email}. Sesión {SessionToken} invalidada",
             session.User.Email.Value, session.SessionToken);
 
         return new LogoutResponse
@@ -75,4 +75,4 @@ public class LogoutHandler : IRequestHandler<LogoutCommand, LogoutResponse>
             Success = true
         };
     }
-} 
+}

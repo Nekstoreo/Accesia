@@ -1,7 +1,7 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Filters;
 using System.Security.Claims;
 using Accesia.Application.Common.Interfaces;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Filters;
 
 namespace Accesia.API.Attributes;
 
@@ -18,11 +18,12 @@ public class ValidateCsrfAttribute : ActionFilterAttribute
 
         // Obtener ID del usuario del token JWT
         var userIdClaim = context.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier);
-        if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out Guid userId))
+        if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out var userId))
         {
-            context.Result = new UnauthorizedObjectResult(new { 
+            context.Result = new UnauthorizedObjectResult(new
+            {
                 mensaje = "Usuario no autenticado",
-                timestamp = DateTime.UtcNow 
+                timestamp = DateTime.UtcNow
             });
             return;
         }
@@ -33,9 +34,10 @@ public class ValidateCsrfAttribute : ActionFilterAttribute
         var csrfToken = csrfService.ExtractTokenFromHeaders(headers);
         if (string.IsNullOrWhiteSpace(csrfToken))
         {
-            context.Result = new BadRequestObjectResult(new { 
+            context.Result = new BadRequestObjectResult(new
+            {
                 mensaje = "Token CSRF requerido. Incluye el header 'X-CSRF-Token'",
-                timestamp = DateTime.UtcNow 
+                timestamp = DateTime.UtcNow
             });
             return;
         }
@@ -43,13 +45,14 @@ public class ValidateCsrfAttribute : ActionFilterAttribute
         // Validar token CSRF
         if (!csrfService.ValidateToken(csrfToken, userId))
         {
-            context.Result = new UnauthorizedObjectResult(new { 
+            context.Result = new UnauthorizedObjectResult(new
+            {
                 mensaje = "Token CSRF inválido o expirado",
-                timestamp = DateTime.UtcNow 
+                timestamp = DateTime.UtcNow
             });
             return;
         }
 
         base.OnActionExecuting(context);
     }
-} 
+}

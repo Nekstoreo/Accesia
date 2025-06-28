@@ -1,7 +1,7 @@
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.EntityFrameworkCore;
 using Accesia.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Accesia.Infrastructure.Jobs;
 
@@ -38,7 +38,7 @@ public class PasswordHistoryCleanupJob
                 .Where(u => u.PasswordHistories.Count > maxPasswordHistoryPerUser)
                 .ToListAsync(cancellationToken);
 
-            int totalRemoved = 0;
+            var totalRemoved = 0;
 
             foreach (var user in usersWithTooManyPasswords)
             {
@@ -52,8 +52,8 @@ public class PasswordHistoryCleanupJob
                 {
                     context.PasswordHistories.RemoveRange(passwordsToRemove);
                     totalRemoved += passwordsToRemove.Count;
-                    
-                    _logger.LogDebug("Eliminando {Count} contraseñas antiguas para usuario {UserId}", 
+
+                    _logger.LogDebug("Eliminando {Count} contraseñas antiguas para usuario {UserId}",
                         passwordsToRemove.Count, user.Id);
                 }
             }
@@ -67,15 +67,16 @@ public class PasswordHistoryCleanupJob
             {
                 context.PasswordHistories.RemoveRange(oldPasswords);
                 totalRemoved += oldPasswords.Count;
-                
-                _logger.LogInformation("Eliminando {Count} contraseñas más antiguas de {Date}", 
+
+                _logger.LogInformation("Eliminando {Count} contraseñas más antiguas de {Date}",
                     oldPasswords.Count, cutoffDate);
             }
 
             if (totalRemoved > 0)
             {
                 await context.SaveChangesAsync(cancellationToken);
-                _logger.LogInformation("Limpieza completada. {TotalRemoved} entradas de historial eliminadas", totalRemoved);
+                _logger.LogInformation("Limpieza completada. {TotalRemoved} entradas de historial eliminadas",
+                    totalRemoved);
             }
             else
             {
@@ -88,4 +89,4 @@ public class PasswordHistoryCleanupJob
             throw;
         }
     }
-} 
+}

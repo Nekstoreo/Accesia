@@ -1,7 +1,7 @@
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Accesia.Domain.Entities;
 using Accesia.Domain.ValueObjects;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Accesia.Infrastructure.Data.Configurations;
 
@@ -10,9 +10,9 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
     public void Configure(EntityTypeBuilder<User> builder)
     {
         builder.ToTable("Users");
-        
+
         builder.HasKey(x => x.Id);
-        
+
         // Configuración del value object Email
         builder.Property(x => x.Email)
             .HasConversion(
@@ -20,43 +20,43 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
                 value => new Email(value))
             .HasMaxLength(320)
             .IsRequired();
-            
+
         builder.HasIndex(x => x.Email).IsUnique();
-        
+
         // Propiedades básicas
         builder.Property(x => x.PasswordHash).HasMaxLength(255).IsRequired();
         builder.Property(x => x.FirstName).HasMaxLength(100).IsRequired();
         builder.Property(x => x.LastName).HasMaxLength(100).IsRequired();
         builder.Property(x => x.Status).IsRequired();
-        
+
         // Campos de eliminación de cuenta
         builder.Property(x => x.AccountDeletionToken).HasMaxLength(512);
         builder.Property(x => x.AccountDeletionTokenExpiresAt);
         builder.Property(x => x.MarkedForDeletionAt);
         builder.Property(x => x.DeletionReason).HasMaxLength(500);
-        
+
         // Campos opcionales
         builder.Property(x => x.PhoneNumber).HasMaxLength(20);
         builder.Property(x => x.PreferredLanguage).HasMaxLength(10).HasDefaultValue("es");
         builder.Property(x => x.TimeZone).HasMaxLength(50).HasDefaultValue("America/Bogota");
-        
+
         // Índices para performance
         builder.HasIndex(x => x.Status);
         builder.HasIndex(x => x.CreatedAt);
         builder.HasIndex(x => x.LastLoginAt);
         builder.HasIndex(x => x.AccountDeletionToken);
         builder.HasIndex(x => x.MarkedForDeletionAt);
-        
+
         // Relación con Sessions
         builder.HasMany(x => x.Sessions)
             .WithOne(x => x.User)
             .HasForeignKey(x => x.UserId)
             .OnDelete(DeleteBehavior.Cascade);
-            
+
         // Relación con UserRoles
         builder.HasMany(x => x.UserRoles)
             .WithOne(x => x.User)
             .HasForeignKey(x => x.UserId)
             .OnDelete(DeleteBehavior.Cascade);
     }
-} 
+}

@@ -9,9 +9,9 @@ namespace Accesia.Infrastructure.Services;
 public class AdvancedRateLimitService : IAdvancedRateLimitService
 {
     private readonly IMemoryCache _cache;
+    private readonly IDeviceInfoService _deviceInfoService;
     private readonly ILogger<AdvancedRateLimitService> _logger;
     private readonly ISecurityAuditService _securityAuditService;
-    private readonly IDeviceInfoService _deviceInfoService;
     private readonly SecuritySettings _securitySettings;
 
     public AdvancedRateLimitService(
@@ -35,24 +35,17 @@ public class AdvancedRateLimitService : IAdvancedRateLimitService
         if (policy == null) return true;
 
         var keys = GenerateKeys(actionKey, ipAddress, userId, endpoint);
-        
+
         // Verificar bloqueos manuales primero
         foreach (var key in keys)
-        {
             if (await IsBlockedAsync(key, cancellationToken))
-            {
                 return false;
-            }
-        }
 
         // Verificar límites por cada clave (IP, Usuario, Endpoint)
         foreach (var key in keys)
         {
             var canProceed = await CheckLimitForKeyAsync(key, policy, cancellationToken);
-            if (!canProceed)
-            {
-                return false;
-            }
+            if (!canProceed) return false;
         }
 
         return true;
@@ -65,11 +58,8 @@ public class AdvancedRateLimitService : IAdvancedRateLimitService
         if (policy == null) return;
 
         var keys = GenerateKeys(actionKey, ipAddress, userId, endpoint);
-        
-        foreach (var key in keys)
-        {
-            await RecordAttemptForKeyAsync(key, policy, cancellationToken);
-        }
+
+        foreach (var key in keys) await RecordAttemptForKeyAsync(key, policy, cancellationToken);
 
         _logger.LogDebug("Registrado intento de {ActionKey} - IP: {IpAddress}, Usuario: {UserId}, Endpoint: {Endpoint}",
             actionKey, ipAddress, userId, endpoint);
@@ -99,14 +89,12 @@ public class AdvancedRateLimitService : IAdvancedRateLimitService
     {
         var policy = GetPolicy(actionKey);
         if (policy == null)
-        {
             return new RateLimitStatus
             {
                 ActionKey = actionKey,
                 CanProceed = true,
                 LimiterType = "None"
             };
-        }
 
         var key = GeneratePrimaryKey(actionKey, ipAddress, userId);
         var attempts = GetAttemptsForKey(key, policy);
@@ -130,7 +118,8 @@ public class AdvancedRateLimitService : IAdvancedRateLimitService
         };
     }
 
-    public async Task BlockKeyAsync(string key, TimeSpan duration, string reason, CancellationToken cancellationToken = default)
+    public async Task BlockKeyAsync(string key, TimeSpan duration, string reason,
+        CancellationToken cancellationToken = default)
     {
         var blockInfo = new BlockInfo
         {
@@ -140,7 +129,7 @@ public class AdvancedRateLimitService : IAdvancedRateLimitService
         };
 
         _cache.Set($"block:{key}", blockInfo, duration);
-        
+
         _logger.LogWarning("Clave bloqueada manualmente: {Key}, Duración: {Duration}, Razón: {Reason}",
             key, duration, reason);
 
@@ -150,9 +139,9 @@ public class AdvancedRateLimitService : IAdvancedRateLimitService
     public async Task UnblockKeyAsync(string key, CancellationToken cancellationToken = default)
     {
         _cache.Remove($"block:{key}");
-        
+
         _logger.LogInformation("Clave desbloqueada manualmente: {Key}", key);
-        
+
         await Task.CompletedTask;
     }
 
@@ -183,11 +172,8 @@ public class AdvancedRateLimitService : IAdvancedRateLimitService
         string? endpoint = null, CancellationToken cancellationToken = default)
     {
         var keys = GenerateKeys(actionKey, ipAddress, userId, endpoint);
-        
-        foreach (var key in keys)
-        {
-            _cache.Remove(key);
-        }
+
+        foreach (var key in keys) _cache.Remove(key);
 
         _logger.LogInformation("Rate limit reseteado para {ActionKey} - IP: {IpAddress}, Usuario: {UserId}",
             actionKey, ipAddress, userId);
@@ -195,11 +181,13 @@ public class AdvancedRateLimitService : IAdvancedRateLimitService
         await Task.CompletedTask;
     }
 
-    public async Task ConfigurePolicyAsync(string actionKey, RateLimitPolicy policy, CancellationToken cancellationToken = default)
+    public async Task ConfigurePolicyAsync(string actionKey, RateLimitPolicy policy,
+        CancellationToken cancellationToken = default)
     {
         _securitySettings.RateLimit.Policies[actionKey] = policy;
-        
-        _logger.LogInformation("Política de rate limit configurada para {ActionKey}: {MaxAttempts} intentos en {WindowMinutes} minutos",
+
+        _logger.LogInformation(
+            "Política de rate limit configurada para {ActionKey}: {MaxAttempts} intentos en {WindowMinutes} minutos",
             actionKey, policy.MaxAttempts, policy.WindowMinutes);
 
         await Task.CompletedTask;
@@ -214,20 +202,13 @@ public class AdvancedRateLimitService : IAdvancedRateLimitService
     {
         var keys = new List<string>();
 
-        if (_securitySettings.RateLimit.EnableIpSpecificLimits)
-        {
-            keys.Add($"rate_limit:{actionKey}:ip:{ipAddress}");
-        }
+        if (_securitySettings.RateLimit.EnableIpSpecificLimits) keys.Add($"rate_limit:{actionKey}:ip:{ipAddress}");
 
         if (_securitySettings.RateLimit.EnableUserSpecificLimits && userId.HasValue)
-        {
             keys.Add($"rate_limit:{actionKey}:user:{userId.Value}");
-        }
 
         if (_securitySettings.RateLimit.EnableEndpointSpecificLimits && !string.IsNullOrEmpty(endpoint))
-        {
             keys.Add($"rate_limit:{actionKey}:endpoint:{endpoint.Replace("/", "_")}");
-        }
 
         // Siempre incluir clave combinada como respaldo
         keys.Add(GeneratePrimaryKey(actionKey, ipAddress, userId));
@@ -241,7 +222,8 @@ public class AdvancedRateLimitService : IAdvancedRateLimitService
         return $"rate_limit:{actionKey}:combined:{ipAddress}:{userPart}";
     }
 
-    private async Task<bool> CheckLimitForKeyAsync(string key, RateLimitPolicy policy, CancellationToken cancellationToken)
+    private async Task<bool> CheckLimitForKeyAsync(string key, RateLimitPolicy policy,
+        CancellationToken cancellationToken)
     {
         switch (policy.Type.ToLowerInvariant())
         {
@@ -275,7 +257,8 @@ public class AdvancedRateLimitService : IAdvancedRateLimitService
         }
     }
 
-    private async Task<TimeSpan> GetCooldownForKeyAsync(string key, RateLimitPolicy policy, CancellationToken cancellationToken)
+    private async Task<TimeSpan> GetCooldownForKeyAsync(string key, RateLimitPolicy policy,
+        CancellationToken cancellationToken)
     {
         var attempts = GetAttemptsForKey(key, policy);
         if (attempts.Count < policy.MaxAttempts) return TimeSpan.Zero;
@@ -302,7 +285,7 @@ public class AdvancedRateLimitService : IAdvancedRateLimitService
     {
         var attempts = GetAttemptsForKey(key, policy);
         var windowStart = GetWindowStart(policy);
-        
+
         // Filtrar intentos dentro de la ventana actual
         var attemptsInWindow = attempts.Where(a => a >= windowStart).ToList();
         return attemptsInWindow.Count < policy.MaxAttempts;
@@ -312,7 +295,7 @@ public class AdvancedRateLimitService : IAdvancedRateLimitService
     {
         var attempts = GetAttemptsForKey(key, policy);
         var cutoff = DateTime.UtcNow.AddMinutes(-policy.WindowMinutes);
-        
+
         var validAttempts = attempts.Where(a => a >= cutoff).ToList();
         return validAttempts.Count < policy.MaxAttempts;
     }
@@ -330,7 +313,7 @@ public class AdvancedRateLimitService : IAdvancedRateLimitService
         var elapsed = DateTime.UtcNow - bucket.LastRefill;
         var periodsElapsed = elapsed.TotalMinutes / policy.ReplenishmentPeriodMinutes;
         var tokensToAdd = (int)(periodsElapsed * policy.TokensPerPeriod);
-        
+
         if (tokensToAdd > 0)
         {
             bucket.Tokens = Math.Min(policy.TokensPerPeriod, bucket.Tokens + tokensToAdd);
@@ -338,7 +321,7 @@ public class AdvancedRateLimitService : IAdvancedRateLimitService
         }
 
         var canProceed = bucket.Tokens > 0;
-        
+
         // Actualizar bucket en cache
         var expiration = TimeSpan.FromMinutes(policy.ReplenishmentPeriodMinutes * 2);
         _cache.Set(bucketKey, bucket, expiration);
@@ -350,11 +333,11 @@ public class AdvancedRateLimitService : IAdvancedRateLimitService
     {
         var attempts = GetAttemptsForKey(key, policy);
         var windowStart = GetWindowStart(policy);
-        
+
         // Limpiar intentos fuera de la ventana actual
         attempts.RemoveAll(a => a < windowStart);
         attempts.Add(DateTime.UtcNow);
-        
+
         var expiration = TimeSpan.FromMinutes(policy.WindowMinutes + 5);
         _cache.Set(key, attempts, expiration);
     }
@@ -363,10 +346,10 @@ public class AdvancedRateLimitService : IAdvancedRateLimitService
     {
         var attempts = GetAttemptsForKey(key, policy);
         var cutoff = DateTime.UtcNow.AddMinutes(-policy.WindowMinutes);
-        
+
         attempts.RemoveAll(a => a < cutoff);
         attempts.Add(DateTime.UtcNow);
-        
+
         var expiration = TimeSpan.FromMinutes(policy.WindowMinutes + 5);
         _cache.Set(key, attempts, expiration);
     }
@@ -380,10 +363,7 @@ public class AdvancedRateLimitService : IAdvancedRateLimitService
             LastRefill = DateTime.UtcNow
         };
 
-        if (bucket.Tokens > 0)
-        {
-            bucket.Tokens--;
-        }
+        if (bucket.Tokens > 0) bucket.Tokens--;
 
         var expiration = TimeSpan.FromMinutes(policy.ReplenishmentPeriodMinutes * 2);
         _cache.Set(bucketKey, bucket, expiration);
@@ -403,12 +383,12 @@ public class AdvancedRateLimitService : IAdvancedRateLimitService
     {
         var now = DateTime.UtcNow;
         var windowMinutes = policy.WindowMinutes;
-        
+
         // Calcular inicio de ventana fija
         var totalMinutes = (int)now.TimeOfDay.TotalMinutes;
         var windowsElapsed = totalMinutes / windowMinutes;
         var windowStartMinutes = windowsElapsed * windowMinutes;
-        
+
         return now.Date.AddMinutes(windowStartMinutes);
     }
 
@@ -435,4 +415,4 @@ public class AdvancedRateLimitService : IAdvancedRateLimitService
         public int Tokens { get; set; }
         public DateTime LastRefill { get; set; }
     }
-} 
+}

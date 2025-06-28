@@ -1,5 +1,5 @@
-using FluentValidation;
 using Accesia.Application.Features.Authentication.DTOs;
+using FluentValidation;
 
 namespace Accesia.Application.Features.Authentication.Validators;
 
@@ -13,4 +13,4 @@ public class RefreshTokenRequestValidator : AbstractValidator<RefreshTokenReques
             .MinimumLength(10)
             .WithMessage("El refresh token no es válido");
     }
-} 
+}

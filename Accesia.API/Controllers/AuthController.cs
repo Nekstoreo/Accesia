@@ -1,23 +1,23 @@
-using Microsoft.AspNetCore.Mvc;
-using MediatR;
 using System.Net;
-using Accesia.Application.Features.Authentication.Commands.RegisterUser;
-using Accesia.Application.Features.Authentication.Commands.LoginUser;
-using Accesia.Application.Features.Authentication.Commands.RefreshToken;
-using Accesia.Application.Features.Authentication.DTOs;
-using Accesia.Application.Common.Exceptions;
-using Accesia.Application.Features.Authentication.Commands.VerifyEmail;
-using Accesia.Application.Features.Authentication.Commands.ResendVerificationEmail;
-using Accesia.Application.Features.Authentication.Commands.Logout;
-using Accesia.Application.Features.Authentication.Commands.LogoutAllDevices;
-using Accesia.Application.Features.Authentication.Commands.RequestPasswordReset;
-using Accesia.Application.Features.Authentication.Commands.ConfirmPasswordReset;
-using Accesia.Application.Features.Authentication.Commands.ChangePassword;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.RateLimiting;
 using System.Security.Claims;
 using Accesia.API.Attributes;
+using Accesia.Application.Common.Exceptions;
 using Accesia.Application.Common.Interfaces;
+using Accesia.Application.Features.Authentication.Commands.ChangePassword;
+using Accesia.Application.Features.Authentication.Commands.ConfirmPasswordReset;
+using Accesia.Application.Features.Authentication.Commands.LoginUser;
+using Accesia.Application.Features.Authentication.Commands.Logout;
+using Accesia.Application.Features.Authentication.Commands.LogoutAllDevices;
+using Accesia.Application.Features.Authentication.Commands.RefreshToken;
+using Accesia.Application.Features.Authentication.Commands.RegisterUser;
+using Accesia.Application.Features.Authentication.Commands.RequestPasswordReset;
+using Accesia.Application.Features.Authentication.Commands.ResendVerificationEmail;
+using Accesia.Application.Features.Authentication.Commands.VerifyEmail;
+using Accesia.Application.Features.Authentication.DTOs;
+using MediatR;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Accesia.API.Controllers;
 
@@ -26,9 +26,9 @@ namespace Accesia.API.Controllers;
 [Produces("application/json")]
 public class AuthController : ControllerBase
 {
-    private readonly IMediator _mediator;
-    private readonly ILogger<AuthController> _logger;
     private readonly ICsrfTokenService _csrfTokenService;
+    private readonly ILogger<AuthController> _logger;
+    private readonly IMediator _mediator;
 
     public AuthController(IMediator mediator, ILogger<AuthController> logger, ICsrfTokenService csrfTokenService)
     {
@@ -38,7 +38,7 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
-    /// Registra un nuevo usuario en el sistema
+    ///     Registra un nuevo usuario en el sistema
     /// </summary>
     /// <param name="request">Datos del usuario a registrar</param>
     /// <returns>Información del usuario registrado</returns>
@@ -57,27 +57,28 @@ public class AuthController : ControllerBase
         {
             // Obtener la IP del cliente
             var clientIp = GetClientIpAddress();
-            
+
             // Crear el comando con la IP del cliente
             var command = RegisterUserCommand.FromRequest(request, clientIp);
-            
+
             // Ejecutar el comando
             var response = await _mediator.Send(command, cancellationToken);
-            
+
             _logger.LogInformation("Usuario registrado exitosamente: {Email}", request.Email);
-            
+
             return CreatedAtAction(
-                nameof(Register), 
-                new { email = response.Email }, 
+                nameof(Register),
+                new { email = response.Email },
                 response);
         }
         catch (EmailAlreadyExistsException ex)
         {
             _logger.LogWarning(ex, "Intento de registro con email duplicado: {Email}", ex.Email);
-            return Conflict(new { 
+            return Conflict(new
+            {
                 mensaje = ex.Message,
                 email = ex.Email,
-                timestamp = DateTime.UtcNow 
+                timestamp = DateTime.UtcNow
             });
         }
         catch (RateLimitExceededException ex)
@@ -87,23 +88,24 @@ public class AuthController : ControllerBase
         catch (ArgumentException ex)
         {
             _logger.LogWarning(ex, "Datos de entrada inválidos para registro");
-            return BadRequest(new { 
+            return BadRequest(new
+            {
                 mensaje = ex.Message,
-                timestamp = DateTime.UtcNow 
+                timestamp = DateTime.UtcNow
             });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error interno al registrar usuario");
             return Problem(
-                detail: "Ha ocurrido un error inesperado. Por favor, intenta nuevamente más tarde.",
+                "Ha ocurrido un error inesperado. Por favor, intenta nuevamente más tarde.",
                 statusCode: 500,
                 title: "Error interno del servidor");
         }
     }
 
     /// <summary>
-    /// Reenvía el email de verificación al usuario
+    ///     Reenvía el email de verificación al usuario
     /// </summary>
     /// <param name="request">Datos para el reenvío de verificación</param>
     /// <returns>Respuesta del reenvío de verificación</returns>
@@ -121,32 +123,33 @@ public class AuthController : ControllerBase
         {
             // Obtener la IP del cliente
             var clientIp = GetClientIpAddress();
-            
+
             // Crear el comando con la IP del cliente
             var command = ResendVerificationEmailCommand.FromRequest(request, clientIp);
-            
+
             // Ejecutar el comando
             var response = await _mediator.Send(command, cancellationToken);
-            
+
             _logger.LogInformation("Email de verificación reenviado exitosamente a {Email}", request.Email);
-            
+
             return Ok(response);
         }
         catch (UserNotFoundException ex)
         {
             _logger.LogWarning(ex, "Usuario no encontrado para reenvío: {Email}", ex.Email);
             return Problem(
-                detail: ex.Message,
+                ex.Message,
                 statusCode: 404,
                 title: "Usuario no encontrado");
         }
         catch (EmailAlreadyVerifiedException ex)
         {
             _logger.LogWarning(ex, "Intento de reenvío para email ya verificado: {Email}", ex.Email);
-            return Conflict(new { 
+            return Conflict(new
+            {
                 mensaje = ex.Message,
                 email = ex.Email,
-                timestamp = DateTime.UtcNow 
+                timestamp = DateTime.UtcNow
             });
         }
         catch (RateLimitExceededException ex)
@@ -156,23 +159,24 @@ public class AuthController : ControllerBase
         catch (ArgumentException ex)
         {
             _logger.LogWarning(ex, "Datos de entrada inválidos para reenvío");
-            return BadRequest(new { 
+            return BadRequest(new
+            {
                 mensaje = ex.Message,
-                timestamp = DateTime.UtcNow 
+                timestamp = DateTime.UtcNow
             });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error interno al reenviar verificación");
             return Problem(
-                detail: "Ha ocurrido un error inesperado. Por favor, intenta nuevamente más tarde.",
+                "Ha ocurrido un error inesperado. Por favor, intenta nuevamente más tarde.",
                 statusCode: 500,
                 title: "Error interno del servidor");
         }
     }
 
     /// <summary>
-    /// Inicia sesión de un usuario con email y contraseña
+    ///     Inicia sesión de un usuario con email y contraseña
     /// </summary>
     /// <param name="request">Datos de login del usuario</param>
     /// <returns>Información de la sesión y tokens de acceso</returns>
@@ -193,19 +197,19 @@ public class AuthController : ControllerBase
         {
             var clientIp = GetClientIpAddress();
             var userAgent = Request.Headers["User-Agent"].ToString();
-            
+
             var command = LoginUserCommand.FromRequest(request, clientIp, userAgent);
             var response = await _mediator.Send(command, cancellationToken);
-            
+
             _logger.LogInformation("Login exitoso para usuario {Email}", request.Email);
-            
+
             return Ok(response);
         }
         catch (UserNotFoundException ex)
         {
             _logger.LogWarning(ex, "Usuario no encontrado para login: {Email}", ex.Email);
             return Problem(
-                detail: ex.Message,
+                ex.Message,
                 statusCode: 404,
                 title: "Usuario no encontrado");
         }
@@ -213,18 +217,18 @@ public class AuthController : ControllerBase
         {
             _logger.LogWarning(ex, "Credenciales inválidas para {Email}", ex.Email);
             return Problem(
-                detail: ex.Message,
+                ex.Message,
                 statusCode: 401,
                 title: "Credenciales inválidas");
         }
         catch (AccountLockedException ex)
         {
             _logger.LogWarning(ex, "Cuenta bloqueada para {Email}", ex.Email);
-            
+
             Response.Headers.Append("Retry-After", ((int)ex.RemainingLockTime.TotalSeconds).ToString());
-            
+
             return Problem(
-                detail: ex.Message,
+                ex.Message,
                 statusCode: 423,
                 title: "Cuenta bloqueada");
         }
@@ -232,7 +236,7 @@ public class AuthController : ControllerBase
         {
             _logger.LogWarning(ex, "Email no verificado para {Email}", ex.Email);
             return Problem(
-                detail: ex.Message,
+                ex.Message,
                 statusCode: 403,
                 title: "Email no verificado");
         }
@@ -243,23 +247,24 @@ public class AuthController : ControllerBase
         catch (ArgumentException ex)
         {
             _logger.LogWarning(ex, "Datos de entrada inválidos para login");
-            return BadRequest(new { 
+            return BadRequest(new
+            {
                 mensaje = ex.Message,
-                timestamp = DateTime.UtcNow 
+                timestamp = DateTime.UtcNow
             });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error interno al procesar login");
             return Problem(
-                detail: "Ha ocurrido un error inesperado. Por favor, intenta nuevamente más tarde.",
+                "Ha ocurrido un error inesperado. Por favor, intenta nuevamente más tarde.",
                 statusCode: 500,
                 title: "Error interno del servidor");
         }
     }
 
     /// <summary>
-    /// Renueva el token de acceso usando un refresh token
+    ///     Renueva el token de acceso usando un refresh token
     /// </summary>
     /// <param name="request">Datos del refresh token</param>
     /// <returns>Nuevos tokens de acceso</returns>
@@ -278,19 +283,19 @@ public class AuthController : ControllerBase
         {
             var clientIp = GetClientIpAddress();
             var userAgent = Request.Headers["User-Agent"].ToString();
-            
+
             var command = RefreshTokenCommand.FromRequest(request, clientIp, userAgent);
             var response = await _mediator.Send(command, cancellationToken);
-            
+
             _logger.LogInformation("Token renovado exitosamente desde IP {IpAddress}", clientIp);
-            
+
             return Ok(response);
         }
         catch (InvalidVerificationTokenException ex)
         {
             _logger.LogWarning(ex, "Refresh token inválido desde IP {IpAddress}", GetClientIpAddress());
             return Problem(
-                detail: ex.Message,
+                ex.Message,
                 statusCode: 401,
                 title: "Token inválido");
         }
@@ -298,15 +303,16 @@ public class AuthController : ControllerBase
         {
             _logger.LogWarning(ex, "Refresh token expirado desde IP {IpAddress}", GetClientIpAddress());
             return Problem(
-                detail: ex.Message,
+                ex.Message,
                 statusCode: 410,
                 title: "Token expirado");
         }
         catch (UserNotFoundException ex)
         {
-            _logger.LogWarning(ex, "Usuario no encontrado para refresh token desde IP {IpAddress}", GetClientIpAddress());
+            _logger.LogWarning(ex, "Usuario no encontrado para refresh token desde IP {IpAddress}",
+                GetClientIpAddress());
             return Problem(
-                detail: ex.Message,
+                ex.Message,
                 statusCode: 404,
                 title: "Usuario no encontrado");
         }
@@ -317,23 +323,24 @@ public class AuthController : ControllerBase
         catch (ArgumentException ex)
         {
             _logger.LogWarning(ex, "Datos de entrada inválidos para refresh token");
-            return BadRequest(new { 
+            return BadRequest(new
+            {
                 mensaje = ex.Message,
-                timestamp = DateTime.UtcNow 
+                timestamp = DateTime.UtcNow
             });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error interno al renovar token");
             return Problem(
-                detail: "Ha ocurrido un error inesperado. Por favor, intenta nuevamente más tarde.",
+                "Ha ocurrido un error inesperado. Por favor, intenta nuevamente más tarde.",
                 statusCode: 500,
                 title: "Error interno del servidor");
         }
     }
 
     /// <summary>
-    /// Maneja las excepciones de rate limiting de manera centralizada
+    ///     Maneja las excepciones de rate limiting de manera centralizada
     /// </summary>
     /// <param name="ex">Excepción de rate limiting</param>
     /// <param name="action">Acción que fue limitada</param>
@@ -341,18 +348,18 @@ public class AuthController : ControllerBase
     private ActionResult HandleRateLimitExceeded(RateLimitExceededException ex, string action)
     {
         _logger.LogWarning(ex, "Rate limit excedido para {Action} desde IP {IP}", action, GetClientIpAddress());
-        
+
         // Agregar header con información del retry
         Response.Headers.Append("Retry-After", ((int)ex.RetryAfter.TotalSeconds).ToString());
-        
+
         return Problem(
-            detail: ex.Message,
+            ex.Message,
             statusCode: 429,
             title: "Demasiados intentos");
     }
 
     /// <summary>
-    /// Obtiene la dirección IP del cliente considerando proxies y load balancers
+    ///     Obtiene la dirección IP del cliente considerando proxies y load balancers
     /// </summary>
     private string GetClientIpAddress()
     {
@@ -383,7 +390,7 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
-    /// Verifica el correo electrónico del usuario
+    ///     Verifica el correo electrónico del usuario
     /// </summary>
     /// <param name="request">Datos de verificación del correo electrónico</param>
     /// <returns>Respuesta de verificación del correo electrónico</returns>
@@ -402,22 +409,22 @@ public class AuthController : ControllerBase
         {
             // Obtener la IP del cliente
             var clientIp = GetClientIpAddress();
-            
+
             // Crear el comando con la IP del cliente
             var command = VerifyEmailCommand.FromRequest(request, clientIp);
-            
+
             // Ejecutar el comando
             var response = await _mediator.Send(command, cancellationToken);
-            
+
             _logger.LogInformation("Correo electrónico verificado exitosamente");
-            
+
             return Ok(response);
         }
         catch (InvalidVerificationTokenException ex)
         {
             _logger.LogWarning(ex, "Token de verificación inválido: {Token}", ex.Token);
             return Problem(
-                detail: ex.Message,
+                ex.Message,
                 statusCode: 404,
                 title: "Token de verificación inválido");
         }
@@ -425,18 +432,19 @@ public class AuthController : ControllerBase
         {
             _logger.LogWarning(ex, "Token de verificación expirado: {Token}", ex.Token);
             return Problem(
-                detail: ex.Message,
+                ex.Message,
                 statusCode: 410,
                 title: "Token de verificación expirado");
         }
         catch (EmailAlreadyVerifiedException ex)
         {
             _logger.LogWarning(ex, "Correo electrónico ya verificado: {Email}", ex.Email);
-            return Conflict(new { 
+            return Conflict(new
+            {
                 mensaje = ex.Message,
                 email = ex.Email,
                 token = ex.Token,
-                timestamp = DateTime.UtcNow 
+                timestamp = DateTime.UtcNow
             });
         }
         catch (RateLimitExceededException ex)
@@ -446,23 +454,24 @@ public class AuthController : ControllerBase
         catch (ArgumentException ex)
         {
             _logger.LogWarning(ex, "Datos de entrada inválidos para verificación");
-            return BadRequest(new { 
+            return BadRequest(new
+            {
                 mensaje = ex.Message,
-                timestamp = DateTime.UtcNow 
+                timestamp = DateTime.UtcNow
             });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error interno al verificar correo electrónico");
             return Problem(
-                detail: "Ha ocurrido un error inesperado. Por favor, intenta nuevamente más tarde.",
+                "Ha ocurrido un error inesperado. Por favor, intenta nuevamente más tarde.",
                 statusCode: 500,
                 title: "Error interno del servidor");
         }
     }
 
     /// <summary>
-    /// Cierra la sesión del usuario invalidando el token JWT y la sesión almacenada
+    ///     Cierra la sesión del usuario invalidando el token JWT y la sesión almacenada
     /// </summary>
     /// <param name="request">Datos para el cierre de sesión</param>
     /// <returns>Respuesta del cierre de sesión</returns>
@@ -478,34 +487,35 @@ public class AuthController : ControllerBase
         {
             var clientIp = GetClientIpAddress();
             var userAgent = Request.Headers["User-Agent"].ToString();
-            
+
             var command = LogoutCommand.FromRequest(request, clientIp, userAgent);
             var response = await _mediator.Send(command, cancellationToken);
-            
+
             _logger.LogInformation("Logout procesado desde IP {IpAddress}", clientIp);
-            
+
             return Ok(response);
         }
         catch (ArgumentException ex)
         {
             _logger.LogWarning(ex, "Datos de entrada inválidos para logout");
-            return BadRequest(new { 
+            return BadRequest(new
+            {
                 mensaje = ex.Message,
-                timestamp = DateTime.UtcNow 
+                timestamp = DateTime.UtcNow
             });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error interno al procesar logout");
             return Problem(
-                detail: "Ha ocurrido un error inesperado. Por favor, intenta nuevamente más tarde.",
+                "Ha ocurrido un error inesperado. Por favor, intenta nuevamente más tarde.",
                 statusCode: 500,
                 title: "Error interno del servidor");
         }
     }
 
     /// <summary>
-    /// Cierra sesión en todos los dispositivos del usuario invalidando todas las sesiones activas
+    ///     Cierra sesión en todos los dispositivos del usuario invalidando todas las sesiones activas
     /// </summary>
     /// <param name="request">Datos para el cierre de sesión en todos los dispositivos</param>
     /// <returns>Respuesta del cierre de sesión en todos los dispositivos</returns>
@@ -521,34 +531,35 @@ public class AuthController : ControllerBase
         {
             var clientIp = GetClientIpAddress();
             var userAgent = Request.Headers["User-Agent"].ToString();
-            
+
             var command = LogoutAllDevicesCommand.FromRequest(request, clientIp, userAgent);
             var response = await _mediator.Send(command, cancellationToken);
-            
+
             _logger.LogInformation("Logout de todos los dispositivos procesado desde IP {IpAddress}", clientIp);
-            
+
             return Ok(response);
         }
         catch (ArgumentException ex)
         {
             _logger.LogWarning(ex, "Datos de entrada inválidos para logout de todos los dispositivos");
-            return BadRequest(new { 
+            return BadRequest(new
+            {
                 mensaje = ex.Message,
-                timestamp = DateTime.UtcNow 
+                timestamp = DateTime.UtcNow
             });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error interno al procesar logout de todos los dispositivos");
             return Problem(
-                detail: "Ha ocurrido un error inesperado. Por favor, intenta nuevamente más tarde.",
+                "Ha ocurrido un error inesperado. Por favor, intenta nuevamente más tarde.",
                 statusCode: 500,
                 title: "Error interno del servidor");
         }
     }
 
     /// <summary>
-    /// Solicita el restablecimiento de contraseña enviando un email con el token
+    ///     Solicita el restablecimiento de contraseña enviando un email con el token
     /// </summary>
     /// <param name="request">Datos para solicitar el restablecimiento</param>
     /// <returns>Respuesta de la solicitud de restablecimiento</returns>
@@ -563,12 +574,12 @@ public class AuthController : ControllerBase
         try
         {
             var clientIp = GetClientIpAddress();
-            
+
             var command = new RequestPasswordResetCommand(request.Email, clientIp);
             var response = await _mediator.Send(command, cancellationToken);
-            
+
             _logger.LogInformation("Solicitud de restablecimiento procesada para email {Email}", request.Email);
-            
+
             return Ok(response);
         }
         catch (RateLimitExceededException ex)
@@ -578,23 +589,24 @@ public class AuthController : ControllerBase
         catch (ArgumentException ex)
         {
             _logger.LogWarning(ex, "Datos de entrada inválidos para solicitud de restablecimiento");
-            return BadRequest(new { 
+            return BadRequest(new
+            {
                 mensaje = ex.Message,
-                timestamp = DateTime.UtcNow 
+                timestamp = DateTime.UtcNow
             });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error interno al procesar solicitud de restablecimiento");
             return Problem(
-                detail: "Ha ocurrido un error inesperado. Por favor, intenta nuevamente más tarde.",
+                "Ha ocurrido un error inesperado. Por favor, intenta nuevamente más tarde.",
                 statusCode: 500,
                 title: "Error interno del servidor");
         }
     }
 
     /// <summary>
-    /// Confirma el restablecimiento de contraseña usando el token recibido por email
+    ///     Confirma el restablecimiento de contraseña usando el token recibido por email
     /// </summary>
     /// <param name="request">Datos para confirmar el restablecimiento</param>
     /// <returns>Respuesta de la confirmación del restablecimiento</returns>
@@ -611,55 +623,57 @@ public class AuthController : ControllerBase
         {
             var command = new ConfirmPasswordResetCommand(request.Token, request.NewPassword);
             var response = await _mediator.Send(command, cancellationToken);
-            
+
             _logger.LogInformation("Restablecimiento de contraseña confirmado exitosamente");
-            
+
             return Ok(response);
         }
         catch (InvalidPasswordResetTokenException ex)
         {
             _logger.LogWarning(ex, "Token de restablecimiento inválido");
             return Problem(
-                detail: ex.Message,
+                ex.Message,
                 statusCode: 404,
                 title: "Token de restablecimiento inválido");
         }
         catch (PasswordRecentlyUsedException ex)
         {
             _logger.LogWarning(ex, "Intento de reutilizar contraseña reciente");
-            return Conflict(new { 
+            return Conflict(new
+            {
                 mensaje = ex.Message,
-                timestamp = DateTime.UtcNow 
+                timestamp = DateTime.UtcNow
             });
         }
         catch (ArgumentException ex)
         {
             _logger.LogWarning(ex, "Datos de entrada inválidos para confirmación de restablecimiento");
-            return BadRequest(new { 
+            return BadRequest(new
+            {
                 mensaje = ex.Message,
-                timestamp = DateTime.UtcNow 
+                timestamp = DateTime.UtcNow
             });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error interno al confirmar restablecimiento");
             return Problem(
-                detail: "Ha ocurrido un error inesperado. Por favor, intenta nuevamente más tarde.",
+                "Ha ocurrido un error inesperado. Por favor, intenta nuevamente más tarde.",
                 statusCode: 500,
                 title: "Error interno del servidor");
         }
     }
 
     /// <summary>
-    /// Cambia la contraseña de un usuario autenticado
+    ///     Cambia la contraseña de un usuario autenticado
     /// </summary>
     /// <param name="request">Datos para el cambio de contraseña</param>
     /// <returns>Respuesta del cambio de contraseña</returns>
     /// <remarks>
-    /// Este endpoint requiere autenticación JWT. 
-    /// El usuario debe estar autenticado para cambiar su contraseña.
-    /// Se validará que la contraseña actual sea correcta antes de proceder.
-    /// Se mantendrá un historial de contraseñas para prevenir reutilización.
+    ///     Este endpoint requiere autenticación JWT.
+    ///     El usuario debe estar autenticado para cambiar su contraseña.
+    ///     Se validará que la contraseña actual sea correcta antes de proceder.
+    ///     Se mantendrá un historial de contraseñas para prevenir reutilización.
     /// </remarks>
     [Authorize]
     [ValidateCsrf]
@@ -677,23 +691,25 @@ public class AuthController : ControllerBase
         {
             // Obtener userId del token JWT autenticado
             var userId = GetUserIdFromJwt();
-            
+
             // Obtener información del dispositivo/cliente
             var clientIp = GetClientIpAddress();
             var userAgent = Request.Headers["User-Agent"].ToString();
-            
-            var command = new ChangePasswordCommand(userId, request.CurrentPassword, request.NewPassword, clientIp, userAgent);
+
+            var command = new ChangePasswordCommand(userId, request.CurrentPassword, request.NewPassword, clientIp,
+                userAgent);
             var response = await _mediator.Send(command, cancellationToken);
-            
-            _logger.LogInformation("Contraseña cambiada exitosamente para usuario {UserId} desde IP {ClientIp}", userId, clientIp);
-            
+
+            _logger.LogInformation("Contraseña cambiada exitosamente para usuario {UserId} desde IP {ClientIp}", userId,
+                clientIp);
+
             return Ok(response);
         }
         catch (UserNotFoundException ex)
         {
             _logger.LogWarning(ex, "Usuario no encontrado para cambio de contraseña");
             return Problem(
-                detail: ex.Message,
+                ex.Message,
                 statusCode: 404,
                 title: "Usuario no encontrado");
         }
@@ -701,40 +717,43 @@ public class AuthController : ControllerBase
         {
             _logger.LogWarning(ex, "Contraseña actual incorrecta");
             return Problem(
-                detail: ex.Message,
+                ex.Message,
                 statusCode: 401,
                 title: "Contraseña actual incorrecta");
         }
         catch (PasswordRecentlyUsedException ex)
         {
             _logger.LogWarning(ex, "Intento de reutilizar contraseña reciente");
-            return Conflict(new { 
+            return Conflict(new
+            {
                 mensaje = ex.Message,
-                timestamp = DateTime.UtcNow 
+                timestamp = DateTime.UtcNow
             });
         }
         catch (UnsafePasswordException ex)
         {
             _logger.LogWarning(ex, "Intento de usar contraseña insegura");
-            return BadRequest(new { 
+            return BadRequest(new
+            {
                 mensaje = ex.Message,
                 sugerencias = ex.SecuritySuggestions,
-                timestamp = DateTime.UtcNow 
+                timestamp = DateTime.UtcNow
             });
         }
         catch (ArgumentException ex)
         {
             _logger.LogWarning(ex, "Datos de entrada inválidos para cambio de contraseña");
-            return BadRequest(new { 
+            return BadRequest(new
+            {
                 mensaje = ex.Message,
-                timestamp = DateTime.UtcNow 
+                timestamp = DateTime.UtcNow
             });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error interno al cambiar contraseña");
             return Problem(
-                detail: "Ha ocurrido un error inesperado. Por favor, intenta nuevamente más tarde.",
+                "Ha ocurrido un error inesperado. Por favor, intenta nuevamente más tarde.",
                 statusCode: 500,
                 title: "Error interno del servidor");
         }
@@ -746,15 +765,12 @@ public class AuthController : ControllerBase
         // Esto puede variar dependiendo de cómo se maneje la autenticación en tu aplicación
         // Aquí se asume que el userId se encuentra en el claim "sub" del token
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-        if (userIdClaim != null && Guid.TryParse(userIdClaim.Value, out Guid userId))
-        {
-            return userId;
-        }
+        if (userIdClaim != null && Guid.TryParse(userIdClaim.Value, out var userId)) return userId;
         throw new UnauthorizedAccessException("No se pudo obtener el userId del token JWT");
     }
 
     /// <summary>
-    /// Obtiene un token CSRF para operaciones sensibles
+    ///     Obtiene un token CSRF para operaciones sensibles
     /// </summary>
     /// <returns>Token CSRF para incluir en headers de solicitudes sensibles</returns>
     [Authorize]
@@ -767,29 +783,31 @@ public class AuthController : ControllerBase
         {
             var userId = GetUserIdFromJwt();
             var csrfToken = _csrfTokenService.GenerateToken(userId);
-            
+
             _logger.LogDebug("Token CSRF generado para usuario {UserId}", userId);
-            
-            return Ok(new { 
+
+            return Ok(new
+            {
                 csrfToken,
                 expiresIn = 3600, // 1 hora en segundos
                 instructions = "Incluir este token en el header 'X-CSRF-Token' para operaciones sensibles",
-                timestamp = DateTime.UtcNow 
+                timestamp = DateTime.UtcNow
             });
         }
         catch (UnauthorizedAccessException ex)
         {
             _logger.LogWarning(ex, "Intento de obtener token CSRF sin autenticación válida");
-            return Unauthorized(new { 
+            return Unauthorized(new
+            {
                 mensaje = ex.Message,
-                timestamp = DateTime.UtcNow 
+                timestamp = DateTime.UtcNow
             });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error interno al generar token CSRF");
             return Problem(
-                detail: "Ha ocurrido un error inesperado. Por favor, intenta nuevamente más tarde.",
+                "Ha ocurrido un error inesperado. Por favor, intenta nuevamente más tarde.",
                 statusCode: 500,
                 title: "Error interno del servidor");
         }

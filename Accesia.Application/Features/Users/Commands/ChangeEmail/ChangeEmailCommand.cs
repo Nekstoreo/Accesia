@@ -1,17 +1,10 @@
-using MediatR;
 using Accesia.Application.Features.Users.DTOs;
+using MediatR;
 
 namespace Accesia.Application.Features.Users.Commands.ChangeEmail;
 
 public class ChangeEmailCommand : IRequest<ChangeEmailResponse>
 {
-    public Guid UserId { get; set; }
-    public string NewEmail { get; set; } = string.Empty;
-    public string CurrentPassword { get; set; } = string.Empty;
-    public string? Reason { get; set; }
-    public string ClientIpAddress { get; set; } = string.Empty;
-    public string UserAgent { get; set; } = string.Empty;
-
     public ChangeEmailCommand(Guid userId, ChangeEmailRequest request, string clientIpAddress, string userAgent)
     {
         UserId = userId;
@@ -21,4 +14,11 @@ public class ChangeEmailCommand : IRequest<ChangeEmailResponse>
         ClientIpAddress = clientIpAddress;
         UserAgent = userAgent;
     }
-} 
+
+    public Guid UserId { get; set; }
+    public string NewEmail { get; set; } = string.Empty;
+    public string CurrentPassword { get; set; } = string.Empty;
+    public string? Reason { get; set; }
+    public string ClientIpAddress { get; set; } = string.Empty;
+    public string UserAgent { get; set; } = string.Empty;
+}

@@ -1,14 +1,14 @@
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
 using System.Net;
 using System.Text.Json;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 
 namespace Accesia.Application.Common.Exceptions;
 
 public class ExceptionMiddleware
 {
-    private readonly RequestDelegate _next;
     private readonly ILogger<ExceptionMiddleware> _logger;
+    private readonly RequestDelegate _next;
 
     public ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddleware> logger)
     {
@@ -143,4 +143,4 @@ public class ErrorResponse
     public string Detail { get; set; } = string.Empty;
     public string Instance { get; set; } = string.Empty;
     public Dictionary<string, object>? Extensions { get; set; }
-} 
+}

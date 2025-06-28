@@ -9,4 +9,4 @@ public class ConfirmAccountDeletionRequest
 
     [Required(ErrorMessage = "La confirmación final es requerida")]
     public bool FinalConfirmation { get; set; }
-} 
+}

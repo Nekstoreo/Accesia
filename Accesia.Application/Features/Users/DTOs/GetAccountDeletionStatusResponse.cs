@@ -10,4 +10,4 @@ public class GetAccountDeletionStatusResponse
     public int DaysRemainingInGracePeriod { get; set; }
     public bool HasPendingDeletionRequest { get; set; }
     public DateTime? DeletionTokenExpiresAt { get; set; }
-} 
+}

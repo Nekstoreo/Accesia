@@ -1,5 +1,5 @@
-using MediatR;
 using Accesia.Application.Features.Users.DTOs;
+using MediatR;
 
 namespace Accesia.Application.Features.Users.Queries.GetUserSettings;
 

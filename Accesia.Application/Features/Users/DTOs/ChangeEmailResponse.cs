@@ -7,4 +7,4 @@ public class ChangeEmailResponse
     public string? NewEmail { get; set; }
     public bool RequiresVerification { get; set; }
     public Dictionary<string, string[]>? ValidationErrors { get; set; }
-} 
+}

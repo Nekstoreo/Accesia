@@ -4,10 +4,8 @@ namespace Accesia.Domain.ValueObjects;
 
 public record Email
 {
-    public string Value { get; }
-
-    private static readonly Regex EmailRegex = new Regex(
-        @"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", 
+    private static readonly Regex EmailRegex = new(
+        @"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$",
         RegexOptions.Compiled | RegexOptions.IgnoreCase
     );
 
@@ -24,6 +22,8 @@ public record Email
         Value = normalizedEmail;
     }
 
+    public string Value { get; }
+
     private bool IsValidEmail(string email)
     {
         return EmailRegex.IsMatch(email);
@@ -35,6 +35,8 @@ public record Email
     }
 
 
-
-    public override string ToString() => Value;
+    public override string ToString()
+    {
+        return Value;
+    }
 }

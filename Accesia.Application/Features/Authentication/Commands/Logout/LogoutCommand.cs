@@ -1,5 +1,5 @@
-using MediatR;
 using Accesia.Application.Features.Authentication.DTOs;
+using MediatR;
 
 namespace Accesia.Application.Features.Authentication.Commands.Logout;
 
@@ -18,4 +18,4 @@ public record LogoutCommand : IRequest<LogoutResponse>
             UserAgent = userAgent
         };
     }
-} 
+}

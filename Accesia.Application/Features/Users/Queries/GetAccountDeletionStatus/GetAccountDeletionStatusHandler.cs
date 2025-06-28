@@ -1,14 +1,15 @@
+using Accesia.Application.Common.Exceptions;
+using Accesia.Application.Common.Interfaces;
+using Accesia.Application.Features.Users.DTOs;
+using Accesia.Domain.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Accesia.Application.Common.Interfaces;
-using Accesia.Application.Common.Exceptions;
-using Accesia.Application.Features.Users.DTOs;
-using Accesia.Domain.Enums;
 
 namespace Accesia.Application.Features.Users.Queries.GetAccountDeletionStatus;
 
-public class GetAccountDeletionStatusHandler : IRequestHandler<GetAccountDeletionStatusQuery, GetAccountDeletionStatusResponse>
+public class
+    GetAccountDeletionStatusHandler : IRequestHandler<GetAccountDeletionStatusQuery, GetAccountDeletionStatusResponse>
 {
     private readonly IApplicationDbContext _context;
     private readonly ILogger<GetAccountDeletionStatusHandler> _logger;
@@ -21,7 +22,8 @@ public class GetAccountDeletionStatusHandler : IRequestHandler<GetAccountDeletio
         _logger = logger;
     }
 
-    public async Task<GetAccountDeletionStatusResponse> Handle(GetAccountDeletionStatusQuery request, CancellationToken cancellationToken)
+    public async Task<GetAccountDeletionStatusResponse> Handle(GetAccountDeletionStatusQuery request,
+        CancellationToken cancellationToken)
     {
         var user = await _context.Users
             .FirstOrDefaultAsync(u => u.Id == request.UserId, cancellationToken);
@@ -31,9 +33,9 @@ public class GetAccountDeletionStatusHandler : IRequestHandler<GetAccountDeletio
 
         const int gracePeriodDays = 30;
         var isMarkedForDeletion = user.Status == UserStatus.MarkedForDeletion;
-        var isInGracePeriod = user.IsInGracePeriod(gracePeriodDays);
-        var permanentDeletionDate = user.GetPermanentDeletionDate(gracePeriodDays);
-        
+        var isInGracePeriod = user.IsInGracePeriod();
+        var permanentDeletionDate = user.GetPermanentDeletionDate();
+
         var daysRemaining = 0;
         if (isMarkedForDeletion && permanentDeletionDate.HasValue)
         {
@@ -55,4 +57,4 @@ public class GetAccountDeletionStatusHandler : IRequestHandler<GetAccountDeletio
             DeletionTokenExpiresAt = user.AccountDeletionTokenExpiresAt
         };
     }
-} 
+}

@@ -1,19 +1,10 @@
-using MediatR;
 using Accesia.Application.Features.Users.DTOs;
+using MediatR;
 
 namespace Accesia.Application.Features.Users.Commands.UpdateProfile;
 
 public class UpdateProfileCommand : IRequest<UpdateProfileResponse>
 {
-    public Guid UserId { get; set; }
-    public string FirstName { get; set; } = string.Empty;
-    public string LastName { get; set; } = string.Empty;
-    public string? PhoneNumber { get; set; }
-    public string PreferredLanguage { get; set; } = "es";
-    public string TimeZone { get; set; } = "America/Bogota";
-    public string ClientIpAddress { get; set; } = string.Empty;
-    public string UserAgent { get; set; } = string.Empty;
-
     public UpdateProfileCommand(Guid userId, UpdateProfileRequest request, string clientIpAddress, string userAgent)
     {
         UserId = userId;
@@ -25,4 +16,13 @@ public class UpdateProfileCommand : IRequest<UpdateProfileResponse>
         ClientIpAddress = clientIpAddress;
         UserAgent = userAgent;
     }
-} 
+
+    public Guid UserId { get; set; }
+    public string FirstName { get; set; } = string.Empty;
+    public string LastName { get; set; } = string.Empty;
+    public string? PhoneNumber { get; set; }
+    public string PreferredLanguage { get; set; } = "es";
+    public string TimeZone { get; set; } = "America/Bogota";
+    public string ClientIpAddress { get; set; } = string.Empty;
+    public string UserAgent { get; set; } = string.Empty;
+}

@@ -1,11 +1,11 @@
-using MediatR;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Accesia.Application.Common.Interfaces;
 using Accesia.Application.Common.Exceptions;
+using Accesia.Application.Common.Interfaces;
 using Accesia.Application.Features.Users.DTOs;
 using Accesia.Domain.Entities;
 using Accesia.Domain.ValueObjects;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Accesia.Application.Features.Users.Commands.ConfirmEmailChange;
 
@@ -20,7 +20,8 @@ public class ConfirmEmailChangeHandler : IRequestHandler<ConfirmEmailChangeComma
         _logger = logger;
     }
 
-    public async Task<ConfirmEmailChangeResponse> Handle(ConfirmEmailChangeCommand request, CancellationToken cancellationToken)
+    public async Task<ConfirmEmailChangeResponse> Handle(ConfirmEmailChangeCommand request,
+        CancellationToken cancellationToken)
     {
         _logger.LogInformation("Confirmando cambio de email a {NewEmail}", request.NewEmail);
 
@@ -37,8 +38,8 @@ public class ConfirmEmailChangeHandler : IRequestHandler<ConfirmEmailChangeComma
         // 2. Verificar que el token sea válido y no haya expirado
         if (!user.IsEmailVerificationTokenValid(request.VerificationToken))
         {
-            _logger.LogWarning("Token de verificación {Token} expirado para usuario {UserId}", 
-                              request.VerificationToken, user.Id);
+            _logger.LogWarning("Token de verificación {Token} expirado para usuario {UserId}",
+                request.VerificationToken, user.Id);
             throw new ExpiredVerificationTokenException("Token de verificación expirado", request.VerificationToken);
         }
 
@@ -70,8 +71,8 @@ public class ConfirmEmailChangeHandler : IRequestHandler<ConfirmEmailChangeComma
 
         await _context.SaveChangesAsync(cancellationToken);
 
-        _logger.LogInformation("Cambio de email confirmado exitosamente para usuario {UserId}. Nuevo email: {NewEmail}", 
-                              user.Id, request.NewEmail);
+        _logger.LogInformation("Cambio de email confirmado exitosamente para usuario {UserId}. Nuevo email: {NewEmail}",
+            user.Id, request.NewEmail);
 
         // 8. Retornar perfil actualizado
         var updatedProfile = new UserProfileDto
@@ -100,4 +101,4 @@ public class ConfirmEmailChangeHandler : IRequestHandler<ConfirmEmailChangeComma
             Profile = updatedProfile
         };
     }
-} 
+}

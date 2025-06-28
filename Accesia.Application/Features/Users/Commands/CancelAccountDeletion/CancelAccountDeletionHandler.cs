@@ -1,10 +1,10 @@
+using Accesia.Application.Common.Exceptions;
+using Accesia.Application.Common.Interfaces;
+using Accesia.Application.Features.Users.DTOs;
+using Accesia.Domain.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Accesia.Application.Common.Interfaces;
-using Accesia.Application.Common.Exceptions;
-using Accesia.Application.Features.Users.DTOs;
-using Accesia.Domain.Enums;
 
 namespace Accesia.Application.Features.Users.Commands.CancelAccountDeletion;
 
@@ -24,23 +24,26 @@ public class CancelAccountDeletionHandler : IRequestHandler<CancelAccountDeletio
         _logger = logger;
     }
 
-    public async Task<CancelAccountDeletionResponse> Handle(CancelAccountDeletionCommand request, CancellationToken cancellationToken)
+    public async Task<CancelAccountDeletionResponse> Handle(CancelAccountDeletionCommand request,
+        CancellationToken cancellationToken)
     {
         // Buscar usuario por token de cancelación
         var user = await _context.Users
             .FirstOrDefaultAsync(u => u.AccountDeletionToken == request.Request.CancellationToken, cancellationToken);
 
         if (user == null)
-            throw new BusinessRuleException("AccountDeletion", "TokenValidation", "Token de cancelación inválido o expirado");
+            throw new BusinessRuleException("AccountDeletion", "TokenValidation",
+                "Token de cancelación inválido o expirado");
 
         // Verificar que el token es válido
         if (!user.IsAccountDeletionTokenValid(request.Request.CancellationToken))
-            throw new BusinessRuleException("AccountDeletion", "TokenValidation", "Token de cancelación inválido o expirado");
+            throw new BusinessRuleException("AccountDeletion", "TokenValidation",
+                "Token de cancelación inválido o expirado");
 
         try
         {
             var wasMarkedForDeletion = user.Status == UserStatus.MarkedForDeletion;
-            
+
             // Cancelar eliminación
             user.CancelAccountDeletion();
 
@@ -58,7 +61,7 @@ public class CancelAccountDeletionHandler : IRequestHandler<CancelAccountDeletio
             return new CancelAccountDeletionResponse
             {
                 Success = true,
-                Message = wasMarkedForDeletion 
+                Message = wasMarkedForDeletion
                     ? "Su cuenta ha sido restaurada exitosamente. Necesitará reactivarla para usar el sistema"
                     : "La solicitud de eliminación ha sido cancelada exitosamente",
                 RestoredAt = DateTime.UtcNow
@@ -67,7 +70,8 @@ public class CancelAccountDeletionHandler : IRequestHandler<CancelAccountDeletio
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error al cancelar eliminación para token {Token}", request.Request.CancellationToken);
-            throw new BusinessRuleException("AccountDeletion", $"User:{user.Id}", "Error al procesar la cancelación de eliminación");
+            throw new BusinessRuleException("AccountDeletion", $"User:{user.Id}",
+                "Error al procesar la cancelación de eliminación");
         }
     }
-} 
+}

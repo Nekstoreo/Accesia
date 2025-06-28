@@ -1,35 +1,14 @@
 using Accesia.Domain.Common;
-using Accesia.Domain.Enums;
 using Accesia.Domain.ValueObjects;
 
 namespace Accesia.Domain.Entities;
 
 public class SecurityAuditLog : AuditableEntity
 {
-    public Guid Id { get; private set; }
-    public Guid? UserId { get; private set; }
-    public string EventType { get; private set; } = string.Empty;
-    public string EventCategory { get; private set; } = string.Empty;
-    public string Description { get; private set; } = string.Empty;
-    public string IpAddress { get; private set; } = string.Empty;
-    public string UserAgent { get; private set; } = string.Empty;
-    public DeviceInfo DeviceInfo { get; private set; } = null!;
-    public LocationInfo? LocationInfo { get; private set; }
-    public string Endpoint { get; private set; } = string.Empty;
-    public string HttpMethod { get; private set; } = string.Empty;
-    public string? RequestId { get; private set; }
-    public bool IsSuccessful { get; private set; }
-    public string? FailureReason { get; private set; }
-    public int? ResponseStatusCode { get; private set; }
-    public Dictionary<string, object> AdditionalData { get; private set; } = new();
-    public string Severity { get; private set; } = string.Empty;
-    public DateTime OccurredAt { get; private set; }
-
-    // Propiedades de navegación
-    public User? User { get; set; }
-
     // Constructor privado para EF Core
-    private SecurityAuditLog() { }
+    private SecurityAuditLog()
+    {
+    }
 
     public SecurityAuditLog(
         Guid? userId,
@@ -69,9 +48,31 @@ public class SecurityAuditLog : AuditableEntity
         OccurredAt = DateTime.UtcNow;
     }
 
+    public Guid Id { get; private set; }
+    public Guid? UserId { get; private set; }
+    public string EventType { get; private set; } = string.Empty;
+    public string EventCategory { get; private set; } = string.Empty;
+    public string Description { get; private set; } = string.Empty;
+    public string IpAddress { get; private set; } = string.Empty;
+    public string UserAgent { get; private set; } = string.Empty;
+    public DeviceInfo DeviceInfo { get; private set; } = null!;
+    public LocationInfo? LocationInfo { get; private set; }
+    public string Endpoint { get; private set; } = string.Empty;
+    public string HttpMethod { get; private set; } = string.Empty;
+    public string? RequestId { get; private set; }
+    public bool IsSuccessful { get; private set; }
+    public string? FailureReason { get; private set; }
+    public int? ResponseStatusCode { get; private set; }
+    public Dictionary<string, object> AdditionalData { get; } = new();
+    public string Severity { get; private set; } = string.Empty;
+    public DateTime OccurredAt { get; private set; }
+
+    // Propiedades de navegación
+    public User? User { get; set; }
+
     // Factory methods para eventos específicos
     public static SecurityAuditLog CreateLoginAttempt(
-        Guid? userId, string email, string ipAddress, string userAgent, 
+        Guid? userId, string email, string ipAddress, string userAgent,
         DeviceInfo deviceInfo, bool isSuccessful, string? failureReason = null,
         LocationInfo? locationInfo = null)
     {
@@ -82,7 +83,7 @@ public class SecurityAuditLog : AuditableEntity
         };
 
         return new SecurityAuditLog(
-            userId, "LoginAttempt", "Authentication", 
+            userId, "LoginAttempt", "Authentication",
             isSuccessful ? $"Login exitoso para {email}" : $"Login fallido para {email}: {failureReason}",
             ipAddress, userAgent, deviceInfo, "/api/auth/login", "POST",
             isSuccessful, isSuccessful ? "Low" : "High",
@@ -102,7 +103,7 @@ public class SecurityAuditLog : AuditableEntity
     }
 
     public static SecurityAuditLog CreateEmailChange(
-        Guid userId, string oldEmail, string newEmail, string ipAddress, 
+        Guid userId, string oldEmail, string newEmail, string ipAddress,
         string userAgent, DeviceInfo deviceInfo, bool isSuccessful,
         string? failureReason = null, LocationInfo? locationInfo = null)
     {
@@ -116,7 +117,7 @@ public class SecurityAuditLog : AuditableEntity
             userId, "EmailChange", "AccountSecurity",
             isSuccessful ? $"Email cambiado de {oldEmail} a {newEmail}" : $"Cambio de email fallido: {failureReason}",
             ipAddress, userAgent, deviceInfo, "/api/users/change-email", "POST",
-            isSuccessful, "High", failureReason: failureReason, 
+            isSuccessful, "High", failureReason: failureReason,
             locationInfo: locationInfo, additionalData: additionalData);
     }
 
@@ -126,7 +127,9 @@ public class SecurityAuditLog : AuditableEntity
     {
         return new SecurityAuditLog(
             userId, "AccountDeletion", "AccountSecurity",
-            isSuccessful ? "Solicitud de eliminación de cuenta procesada" : $"Solicitud de eliminación fallida: {failureReason}",
+            isSuccessful
+                ? "Solicitud de eliminación de cuenta procesada"
+                : $"Solicitud de eliminación fallida: {failureReason}",
             ipAddress, userAgent, deviceInfo, "/api/users/request-account-deletion", "POST",
             isSuccessful, "Critical", failureReason: failureReason, locationInfo: locationInfo);
     }
@@ -145,7 +148,7 @@ public class SecurityAuditLog : AuditableEntity
             userId, "RateLimitExceeded", "Security",
             $"Rate limit excedido para política {policyName} en endpoint {endpoint}",
             ipAddress, userAgent, deviceInfo, endpoint, "ANY",
-            false, "Medium", failureReason: $"Rate limit policy '{policyName}' exceeded",
+            false, failureReason: $"Rate limit policy '{policyName}' exceeded",
             responseStatusCode: 429, locationInfo: locationInfo, additionalData: additionalData);
     }
 
@@ -183,9 +186,6 @@ public class SecurityAuditLog : AuditableEntity
 
     public void AddAdditionalData(Dictionary<string, object> data)
     {
-        foreach (var kvp in data)
-        {
-            AdditionalData[kvp.Key] = kvp.Value;
-        }
+        foreach (var kvp in data) AdditionalData[kvp.Key] = kvp.Value;
     }
-} 
+}

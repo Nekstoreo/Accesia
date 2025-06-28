@@ -1,20 +1,20 @@
+using Accesia.Application.Common.Exceptions;
+using Accesia.Application.Common.Interfaces;
+using Accesia.Application.Features.Users.DTOs;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Accesia.Application.Common.Interfaces;
-using Accesia.Application.Common.Exceptions;
-using Accesia.Application.Features.Users.DTOs;
-using Accesia.Domain.Enums;
 
 namespace Accesia.Application.Features.Users.Commands.RequestAccountDeletion;
 
-public class RequestAccountDeletionHandler : IRequestHandler<RequestAccountDeletionCommand, RequestAccountDeletionResponse>
+public class
+    RequestAccountDeletionHandler : IRequestHandler<RequestAccountDeletionCommand, RequestAccountDeletionResponse>
 {
     private readonly IApplicationDbContext _context;
-    private readonly IPasswordHashService _passwordHashService;
-    private readonly ITokenService _tokenService;
     private readonly IEmailService _emailService;
     private readonly ILogger<RequestAccountDeletionHandler> _logger;
+    private readonly IPasswordHashService _passwordHashService;
+    private readonly ITokenService _tokenService;
 
     public RequestAccountDeletionHandler(
         IApplicationDbContext context,
@@ -30,7 +30,8 @@ public class RequestAccountDeletionHandler : IRequestHandler<RequestAccountDelet
         _logger = logger;
     }
 
-    public async Task<RequestAccountDeletionResponse> Handle(RequestAccountDeletionCommand request, CancellationToken cancellationToken)
+    public async Task<RequestAccountDeletionResponse> Handle(RequestAccountDeletionCommand request,
+        CancellationToken cancellationToken)
     {
         var user = await _context.Users
             .FirstOrDefaultAsync(u => u.Id == request.UserId, cancellationToken);
@@ -40,7 +41,8 @@ public class RequestAccountDeletionHandler : IRequestHandler<RequestAccountDelet
 
         // Verificar que el usuario puede realizar esta acción
         if (!user.CanPerformAction())
-            throw new AccountStateException(user.Id.ToString(), user.Status, "No puede solicitar eliminación en el estado actual de la cuenta");
+            throw new AccountStateException(user.Id.ToString(), user.Status,
+                "No puede solicitar eliminación en el estado actual de la cuenta");
 
         // Verificar contraseña actual
         if (!_passwordHashService.VerifyPassword(request.Request.CurrentPassword, user.PasswordHash))
@@ -48,7 +50,8 @@ public class RequestAccountDeletionHandler : IRequestHandler<RequestAccountDelet
 
         // Verificar si ya hay una solicitud pendiente
         if (!string.IsNullOrEmpty(user.AccountDeletionToken))
-            throw new BusinessRuleException("AccountDeletion", $"User:{user.Id}", "Ya existe una solicitud de eliminación pendiente");
+            throw new BusinessRuleException("AccountDeletion", $"User:{user.Id}",
+                "Ya existe una solicitud de eliminación pendiente");
 
         // Generar token de eliminación
         var deletionToken = _tokenService.GenerateSecureToken();
@@ -83,7 +86,8 @@ public class RequestAccountDeletionHandler : IRequestHandler<RequestAccountDelet
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error al procesar solicitud de eliminación para usuario {UserId}", request.UserId);
-            throw new BusinessRuleException("AccountDeletion", $"User:{request.UserId}", "Error al procesar la solicitud de eliminación");
+            throw new BusinessRuleException("AccountDeletion", $"User:{request.UserId}",
+                "Error al procesar la solicitud de eliminación");
         }
     }
-} 
+}

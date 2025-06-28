@@ -1,5 +1,5 @@
-using FluentValidation;
 using Accesia.Application.Features.Users.DTOs;
+using FluentValidation;
 
 namespace Accesia.Application.Features.Users.Validators;
 
@@ -26,4 +26,4 @@ public class ChangeEmailRequestValidator : AbstractValidator<ChangeEmailRequest>
             .WithMessage("La razón no puede tener más de 500 caracteres")
             .When(x => !string.IsNullOrEmpty(x.Reason));
     }
-} 
+}

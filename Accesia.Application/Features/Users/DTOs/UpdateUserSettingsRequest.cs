@@ -5,8 +5,7 @@ namespace Accesia.Application.Features.Users.DTOs;
 
 public class UpdateUserSettingsRequest
 {
-    [Required]
-    public Guid UserId { get; set; }
+    [Required] public Guid UserId { get; set; }
 
     public NotificationSettingsDto? NotificationSettings { get; set; }
     public PrivacySettingsDto? PrivacySettings { get; set; }
@@ -30,8 +29,7 @@ public class NotificationSettingsDto
 
 public class PrivacySettingsDto
 {
-    [EnumDataType(typeof(PrivacyLevel))]
-    public PrivacyLevel? ProfileVisibility { get; set; }
+    [EnumDataType(typeof(PrivacyLevel))] public PrivacyLevel? ProfileVisibility { get; set; }
     public bool? ShowLastLoginTime { get; set; }
     public bool? ShowOnlineStatus { get; set; }
     public bool? AllowDataCollection { get; set; }
@@ -40,17 +38,13 @@ public class PrivacySettingsDto
 
 public class LocalizationSettingsDto
 {
-    [MaxLength(10)]
-    public string? PreferredLanguage { get; set; }
+    [MaxLength(10)] public string? PreferredLanguage { get; set; }
 
-    [MaxLength(50)]
-    public string? TimeZone { get; set; }
+    [MaxLength(50)] public string? TimeZone { get; set; }
 
-    [MaxLength(10)]
-    public string? DateFormat { get; set; }
+    [MaxLength(10)] public string? DateFormat { get; set; }
 
-    [MaxLength(10)]
-    public string? TimeFormat { get; set; }
+    [MaxLength(10)] public string? TimeFormat { get; set; }
 }
 
 public class SecuritySettingsDto
@@ -59,6 +53,5 @@ public class SecuritySettingsDto
     public bool? RequirePasswordChangeOn2FADisable { get; set; }
     public bool? LogoutOnPasswordChange { get; set; }
 
-    [Range(5, 480)]
-    public int? SessionTimeoutMinutes { get; set; }
-} 
+    [Range(5, 480)] public int? SessionTimeoutMinutes { get; set; }
+}

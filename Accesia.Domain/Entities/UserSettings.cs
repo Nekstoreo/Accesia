@@ -6,15 +6,24 @@ namespace Accesia.Domain.Entities;
 
 public class UserSettings : AuditableEntity
 {
-    [Required]
-    public Guid UserId { get; set; }
-    
+    // Constructor privado para EF Core
+    private UserSettings()
+    {
+    }
+
+    public UserSettings(Guid userId)
+    {
+        UserId = userId;
+    }
+
+    [Required] public Guid UserId { get; set; }
+
     // Preferencias de notificación
     public bool EmailNotificationsEnabled { get; set; } = true;
-    public bool SmsNotificationsEnabled { get; set; } = false;
+    public bool SmsNotificationsEnabled { get; set; }
     public bool PushNotificationsEnabled { get; set; } = true;
     public bool InAppNotificationsEnabled { get; set; } = true;
-    
+
     // Configuraciones específicas por tipo de notificación
     public bool SecurityAlertsEnabled { get; set; } = true;
     public bool LoginActivityNotificationsEnabled { get; set; } = true;
@@ -22,50 +31,38 @@ public class UserSettings : AuditableEntity
     public bool AccountUpdateNotificationsEnabled { get; set; } = true;
     public bool SystemAnnouncementsEnabled { get; set; } = true;
     public bool DeviceActivityNotificationsEnabled { get; set; } = true;
-    
+
     // Configuraciones de privacidad
     public PrivacyLevel ProfileVisibility { get; set; } = PrivacyLevel.Private;
-    public bool ShowLastLoginTime { get; set; } = false;
-    public bool ShowOnlineStatus { get; set; } = false;
-    public bool AllowDataCollection { get; set; } = false;
-    public bool AllowMarketingEmails { get; set; } = false;
-    
+    public bool ShowLastLoginTime { get; set; }
+    public bool ShowOnlineStatus { get; set; }
+    public bool AllowDataCollection { get; set; }
+    public bool AllowMarketingEmails { get; set; }
+
     // Configuraciones regionales y de localización
-    [MaxLength(10)]
-    public string PreferredLanguage { get; set; } = "es";
-    
-    [MaxLength(50)]
-    public string TimeZone { get; set; } = "America/Bogota";
-    
-    [MaxLength(10)]
-    public string DateFormat { get; set; } = "dd/MM/yyyy";
-    
-    [MaxLength(10)]
-    public string TimeFormat { get; set; } = "24h";
-    
+    [MaxLength(10)] public string PreferredLanguage { get; set; } = "es";
+
+    [MaxLength(50)] public string TimeZone { get; set; } = "America/Bogota";
+
+    [MaxLength(10)] public string DateFormat { get; set; } = "dd/MM/yyyy";
+
+    [MaxLength(10)] public string TimeFormat { get; set; } = "24h";
+
     // Configuraciones de seguridad
-    public bool TwoFactorAuthEnabled { get; set; } = false;
+    public bool TwoFactorAuthEnabled { get; set; }
     public bool RequirePasswordChangeOn2FADisable { get; set; } = true;
     public bool LogoutOnPasswordChange { get; set; } = true;
     public int SessionTimeoutMinutes { get; set; } = 60;
-    
+
     // Navegación
     public User User { get; set; } = null!;
-    
-    // Constructor privado para EF Core
-    private UserSettings() { }
-    
-    public UserSettings(Guid userId)
-    {
-        UserId = userId;
-    }
-    
+
     // Factory method
     public static UserSettings CreateDefault(Guid userId)
     {
         return new UserSettings(userId);
     }
-    
+
     // Métodos de configuración de notificaciones
     public void EnableNotificationType(NotificationType type, bool enabled = true)
     {
@@ -91,7 +88,7 @@ public class UserSettings : AuditableEntity
                 break;
         }
     }
-    
+
     public void EnableNotificationChannel(NotificationChannel channel, bool enabled = true)
     {
         switch (channel)
@@ -110,7 +107,7 @@ public class UserSettings : AuditableEntity
                 break;
         }
     }
-    
+
     public bool IsNotificationEnabled(NotificationType type, NotificationChannel channel)
     {
         var typeEnabled = type switch
@@ -123,7 +120,7 @@ public class UserSettings : AuditableEntity
             NotificationType.DeviceActivity => DeviceActivityNotificationsEnabled,
             _ => false
         };
-        
+
         var channelEnabled = channel switch
         {
             NotificationChannel.Email => EmailNotificationsEnabled,
@@ -132,13 +129,13 @@ public class UserSettings : AuditableEntity
             NotificationChannel.InApp => InAppNotificationsEnabled,
             _ => false
         };
-        
+
         return typeEnabled && channelEnabled;
     }
-    
-    public void UpdatePrivacySettings(PrivacyLevel profileVisibility, bool showLastLoginTime, 
-                                    bool showOnlineStatus, bool allowDataCollection, 
-                                    bool allowMarketingEmails)
+
+    public void UpdatePrivacySettings(PrivacyLevel profileVisibility, bool showLastLoginTime,
+        bool showOnlineStatus, bool allowDataCollection,
+        bool allowMarketingEmails)
     {
         ProfileVisibility = profileVisibility;
         ShowLastLoginTime = showLastLoginTime;
@@ -146,29 +143,29 @@ public class UserSettings : AuditableEntity
         AllowDataCollection = allowDataCollection;
         AllowMarketingEmails = allowMarketingEmails;
     }
-    
+
     public void UpdateLocalizationSettings(string? preferredLanguage = null, string? timeZone = null,
-                                         string? dateFormat = null, string? timeFormat = null)
+        string? dateFormat = null, string? timeFormat = null)
     {
         if (!string.IsNullOrWhiteSpace(preferredLanguage))
             PreferredLanguage = preferredLanguage;
-            
+
         if (!string.IsNullOrWhiteSpace(timeZone))
             TimeZone = timeZone;
-            
+
         if (!string.IsNullOrWhiteSpace(dateFormat))
             DateFormat = dateFormat;
-            
+
         if (!string.IsNullOrWhiteSpace(timeFormat))
             TimeFormat = timeFormat;
     }
-    
+
     public void UpdateSecuritySettings(bool twoFactorAuthEnabled, bool requirePasswordChangeOn2FADisable,
-                                     bool logoutOnPasswordChange, int sessionTimeoutMinutes)
+        bool logoutOnPasswordChange, int sessionTimeoutMinutes)
     {
         TwoFactorAuthEnabled = twoFactorAuthEnabled;
         RequirePasswordChangeOn2FADisable = requirePasswordChangeOn2FADisable;
         LogoutOnPasswordChange = logoutOnPasswordChange;
         SessionTimeoutMinutes = Math.Max(5, Math.Min(sessionTimeoutMinutes, 480)); // Entre 5 minutos y 8 horas
     }
-} 
+}

@@ -1,19 +1,19 @@
+using Accesia.Application.Common.Interfaces;
+using Accesia.Application.Common.Settings;
+using Accesia.Infrastructure.Data;
+using Accesia.Infrastructure.Jobs;
+using Accesia.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Accesia.Infrastructure.Data;
-using Accesia.Application.Common.Interfaces;
-using Accesia.Application.Common.Settings;
-using Accesia.Infrastructure.Services;
-using Accesia.Infrastructure.Jobs;
 
 namespace Accesia.Infrastructure.Extensions;
 
 public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddInfrastructure(
-        this IServiceCollection services, 
+        this IServiceCollection services,
         IConfiguration configuration)
     {
         // Configurar DbContext con PostgreSQL
@@ -25,9 +25,9 @@ public static class ServiceCollectionExtensions
                 {
                     npgsqlOptions.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName);
                     npgsqlOptions.EnableRetryOnFailure(
-                        maxRetryCount: 3,
-                        maxRetryDelay: TimeSpan.FromSeconds(10),
-                        errorCodesToAdd: null);
+                        3,
+                        TimeSpan.FromSeconds(10),
+                        null);
                 });
 
             // Configuraciones de desarrollo
@@ -50,13 +50,13 @@ public static class ServiceCollectionExtensions
                 tags: new[] { "database", "postgresql" });
 
         // Configurar JWT Settings
-        services.Configure<JwtSettings>(options => 
+        services.Configure<JwtSettings>(options =>
             configuration.GetSection(JwtSettings.SectionName).Bind(options));
-        
+
         // Configurar Security Settings
-        services.Configure<SecuritySettings>(options => 
+        services.Configure<SecuritySettings>(options =>
             configuration.GetSection(SecuritySettings.SectionName).Bind(options));
-        
+
         // Registrar servicios principales
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<IPasswordHashService, PasswordHashService>();
@@ -66,12 +66,12 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<ISessionService, SessionService>();
         services.AddScoped<IDeviceInfoService, DeviceInfoService>();
-        
+
         // Servicios de seguridad y auditoría
         services.AddScoped<ISecurityAuditService, SecurityAuditService>();
         services.AddSingleton<IRateLimitService, RateLimitService>();
         services.AddSingleton<IAdvancedRateLimitService, AdvancedRateLimitService>();
-        
+
         // Registrar Memory Cache para rate limiting
         services.AddMemoryCache();
 
@@ -87,7 +87,7 @@ public static class ServiceCollectionExtensions
     {
         using var scope = serviceProvider.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        
+
         try
         {
             await context.Database.MigrateAsync();
@@ -99,4 +99,4 @@ public static class ServiceCollectionExtensions
             throw;
         }
     }
-} 
+}

@@ -1,17 +1,17 @@
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using Accesia.Application.Common.Interfaces;
-using Accesia.Application.Common.Settings;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using Accesia.Application.Common.Interfaces;
+using Accesia.Application.Common.Settings;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Accesia.Infrastructure.Services;
 
 public class CsrfTokenService : ICsrfTokenService
 {
-    private readonly ILogger<CsrfTokenService> _logger;
     private readonly JwtSettings _jwtSettings;
+    private readonly ILogger<CsrfTokenService> _logger;
     private readonly TimeSpan _tokenLifetime = TimeSpan.FromHours(1); // Token válido por 1 hora
 
     public CsrfTokenService(ILogger<CsrfTokenService> logger, IOptions<JwtSettings> jwtSettings)
@@ -31,13 +31,13 @@ public class CsrfTokenService : ICsrfTokenService
 
         var json = JsonSerializer.Serialize(tokenData);
         var bytes = Encoding.UTF8.GetBytes(json);
-        
+
         // Encriptar el token usando HMAC
         using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(_jwtSettings.SecretKey));
         var signature = hmac.ComputeHash(bytes);
-        
+
         var token = Convert.ToBase64String(bytes) + "." + Convert.ToBase64String(signature);
-        
+
         _logger.LogDebug("Token CSRF generado para usuario {UserId}", userId);
         return token;
     }
@@ -84,14 +84,15 @@ public class CsrfTokenService : ICsrfTokenService
 
             if (tokenData.UserId != userId)
             {
-                _logger.LogWarning("Usuario en token CSRF no coincide. Esperado: {ExpectedUserId}, Actual: {ActualUserId}", 
+                _logger.LogWarning(
+                    "Usuario en token CSRF no coincide. Esperado: {ExpectedUserId}, Actual: {ActualUserId}",
                     userId, tokenData.UserId);
                 return false;
             }
 
             if (DateTime.UtcNow > tokenData.ExpiresAt)
             {
-                _logger.LogWarning("Token CSRF expirado para usuario {UserId}. Expiró el {ExpirationTime}", 
+                _logger.LogWarning("Token CSRF expirado para usuario {UserId}. Expiró el {ExpirationTime}",
                     userId, tokenData.ExpiresAt);
                 return false;
             }
@@ -109,16 +110,10 @@ public class CsrfTokenService : ICsrfTokenService
     public string? ExtractTokenFromHeaders(IDictionary<string, string> headers)
     {
         // Buscar en header X-CSRF-Token
-        if (headers.TryGetValue("X-CSRF-Token", out var headerValue))
-        {
-            return headerValue;
-        }
+        if (headers.TryGetValue("X-CSRF-Token", out var headerValue)) return headerValue;
 
         // Buscar en header X-XSRF-TOKEN (Angular/otros frameworks)
-        if (headers.TryGetValue("X-XSRF-TOKEN", out var xsrfValue))
-        {
-            return xsrfValue;
-        }
+        if (headers.TryGetValue("X-XSRF-TOKEN", out var xsrfValue)) return xsrfValue;
 
         return null;
     }
@@ -137,4 +132,4 @@ public class CsrfTokenService : ICsrfTokenService
         public DateTime ExpiresAt { get; set; }
         public string RandomValue { get; set; } = string.Empty;
     }
-} 
+}

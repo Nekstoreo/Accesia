@@ -1,13 +1,11 @@
-using Microsoft.Extensions.Logging;
-using Accesia.Application.Common.Interfaces;
 using System.Text.RegularExpressions;
+using Accesia.Application.Common.Interfaces;
+using Microsoft.Extensions.Logging;
 
 namespace Accesia.Infrastructure.Services;
 
 public class PasswordSecurityService : IPasswordSecurityService
 {
-    private readonly ILogger<PasswordSecurityService> _logger;
-    
     // Diccionario básico de contraseñas comunes (en un escenario real esto vendría de un archivo o base de datos)
     private static readonly HashSet<string> CommonPasswords = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -25,11 +23,16 @@ public class PasswordSecurityService : IPasswordSecurityService
     private static readonly Regex[] WeakPatterns = new[]
     {
         new Regex(@"^(.)\1+$", RegexOptions.Compiled), // Todos los caracteres iguales
-        new Regex(@"^(012|123|234|345|456|567|678|789|890|abc|bcd|cde|def|efg|fgh|ghi|hij|ijk|jkl|klm|lmn|mno|nop|opq|pqr|qrs|rst|stu|tuv|uvw|vwx|wxy|xyz)", RegexOptions.Compiled | RegexOptions.IgnoreCase), // Secuencias
-        new Regex(@"^(qwe|asd|zxc|qaz|wsx|edc)", RegexOptions.Compiled | RegexOptions.IgnoreCase), // Patrones de teclado
+        new Regex(
+            @"^(012|123|234|345|456|567|678|789|890|abc|bcd|cde|def|efg|fgh|ghi|hij|ijk|jkl|klm|lmn|mno|nop|opq|pqr|qrs|rst|stu|tuv|uvw|vwx|wxy|xyz)",
+            RegexOptions.Compiled | RegexOptions.IgnoreCase), // Secuencias
+        new Regex(@"^(qwe|asd|zxc|qaz|wsx|edc)",
+            RegexOptions.Compiled | RegexOptions.IgnoreCase), // Patrones de teclado
         new Regex(@"^\d+$", RegexOptions.Compiled), // Solo números
         new Regex(@"^[a-zA-Z]+$", RegexOptions.Compiled) // Solo letras
     };
+
+    private readonly ILogger<PasswordSecurityService> _logger;
 
     public PasswordSecurityService(ILogger<PasswordSecurityService> logger)
     {
@@ -38,10 +41,7 @@ public class PasswordSecurityService : IPasswordSecurityService
 
     public bool IsPasswordSafe(string password)
     {
-        if (string.IsNullOrWhiteSpace(password))
-        {
-            return false;
-        }
+        if (string.IsNullOrWhiteSpace(password)) return false;
 
         // Verificar contra diccionario de contraseñas comunes
         if (CommonPasswords.Contains(password))
@@ -60,13 +60,11 @@ public class PasswordSecurityService : IPasswordSecurityService
 
         // Verificar patrones débiles
         foreach (var pattern in WeakPatterns)
-        {
             if (pattern.IsMatch(password))
             {
                 _logger.LogWarning("Contraseña coincide con patrón débil: {Pattern}", pattern.ToString());
                 return false;
             }
-        }
 
         return true;
     }
@@ -88,46 +86,25 @@ public class PasswordSecurityService : IPasswordSecurityService
             return suggestions;
         }
 
-        if (password.Length < 8)
-        {
-            suggestions.Add("Usa al menos 8 caracteres");
-        }
+        if (password.Length < 8) suggestions.Add("Usa al menos 8 caracteres");
 
-        if (!Regex.IsMatch(password, @"[A-Z]"))
-        {
-            suggestions.Add("Incluye al menos una letra mayúscula");
-        }
+        if (!Regex.IsMatch(password, @"[A-Z]")) suggestions.Add("Incluye al menos una letra mayúscula");
 
-        if (!Regex.IsMatch(password, @"[a-z]"))
-        {
-            suggestions.Add("Incluye al menos una letra minúscula");
-        }
+        if (!Regex.IsMatch(password, @"[a-z]")) suggestions.Add("Incluye al menos una letra minúscula");
 
-        if (!Regex.IsMatch(password, @"\d"))
-        {
-            suggestions.Add("Incluye al menos un número");
-        }
+        if (!Regex.IsMatch(password, @"\d")) suggestions.Add("Incluye al menos un número");
 
         if (!Regex.IsMatch(password, @"[!@#$%^&*(),.?\"":{}\|<>]"))
-        {
             suggestions.Add("Incluye al menos un carácter especial");
-        }
 
-        if (CommonPasswords.Contains(password))
-        {
-            suggestions.Add("No uses contraseñas comunes o predecibles");
-        }
+        if (CommonPasswords.Contains(password)) suggestions.Add("No uses contraseñas comunes o predecibles");
 
         if (WeakPatterns.Any(pattern => pattern.IsMatch(password)))
-        {
             suggestions.Add("Evita patrones predecibles como secuencias o repeticiones");
-        }
 
         if (password.ToLower().Contains("password") || password.ToLower().Contains("contraseña"))
-        {
             suggestions.Add("No incluyas palabras relacionadas con 'contraseña' o 'password'");
-        }
 
         return suggestions;
     }
-} 
+}

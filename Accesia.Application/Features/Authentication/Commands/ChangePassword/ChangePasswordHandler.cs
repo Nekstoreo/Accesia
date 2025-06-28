@@ -1,21 +1,21 @@
-using MediatR;
-using Microsoft.Extensions.Logging;
-using Microsoft.EntityFrameworkCore;
-using Accesia.Application.Features.Authentication.DTOs;
-using Accesia.Application.Common.Interfaces;
 using Accesia.Application.Common.Exceptions;
-using Accesia.Domain.ValueObjects;
+using Accesia.Application.Common.Interfaces;
+using Accesia.Application.Features.Authentication.DTOs;
 using Accesia.Domain.Entities;
+using Accesia.Domain.ValueObjects;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Accesia.Application.Features.Authentication.Commands.ChangePassword;
 
 public class ChangePasswordHandler : IRequestHandler<ChangePasswordCommand, ChangePasswordResponse>
 {
     private readonly IApplicationDbContext _context;
+    private readonly IEmailService _emailService;
     private readonly ILogger<ChangePasswordHandler> _logger;
     private readonly IPasswordHashService _passwordHashService;
     private readonly IPasswordSecurityService _passwordSecurityService;
-    private readonly IEmailService _emailService;
 
     public ChangePasswordHandler(
         IApplicationDbContext context,
@@ -33,7 +33,7 @@ public class ChangePasswordHandler : IRequestHandler<ChangePasswordCommand, Chan
 
     public async Task<ChangePasswordResponse> Handle(ChangePasswordCommand request, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Iniciando cambio de contraseña para usuario {UserId} desde IP {ClientIp}", 
+        _logger.LogInformation("Iniciando cambio de contraseña para usuario {UserId} desde IP {ClientIp}",
             request.UserId, request.ClientIp);
 
         // 1. Buscar usuario con historial de contraseñas
@@ -43,7 +43,7 @@ public class ChangePasswordHandler : IRequestHandler<ChangePasswordCommand, Chan
 
         if (user == null)
         {
-            _logger.LogWarning("Usuario no encontrado para cambio de contraseña: {UserId} desde IP {ClientIp}", 
+            _logger.LogWarning("Usuario no encontrado para cambio de contraseña: {UserId} desde IP {ClientIp}",
                 request.UserId, request.ClientIp);
             throw new UserNotFoundException("Usuario no encontrado", request.UserId.ToString());
         }
@@ -51,29 +51,32 @@ public class ChangePasswordHandler : IRequestHandler<ChangePasswordCommand, Chan
         // 2. Verificar contraseña actual
         if (!_passwordHashService.VerifyPassword(request.CurrentPassword, user.PasswordHash))
         {
-            _logger.LogWarning("Contraseña actual incorrecta para usuario {UserId} ({Email}) desde IP {ClientIp}", 
+            _logger.LogWarning("Contraseña actual incorrecta para usuario {UserId} ({Email}) desde IP {ClientIp}",
                 request.UserId, user.Email.Value, request.ClientIp);
             throw new CurrentPasswordIncorrectException();
         }
 
         // 3. Validar nueva contraseña
         var newPassword = new Password(request.NewPassword);
-        
+
         // 3.1. Validar seguridad de la contraseña contra diccionarios comunes
         if (!await _passwordSecurityService.IsPasswordSafeAsync(request.NewPassword, cancellationToken))
         {
             var suggestions = _passwordSecurityService.GetPasswordSecuritySuggestions(request.NewPassword);
-            _logger.LogWarning("Intento de usar contraseña insegura para usuario {UserId} ({Email}) desde IP {ClientIp}", 
+            _logger.LogWarning(
+                "Intento de usar contraseña insegura para usuario {UserId} ({Email}) desde IP {ClientIp}",
                 request.UserId, user.Email.Value, request.ClientIp);
-            throw new UnsafePasswordException("La contraseña no cumple con los estándares de seguridad requeridos.", suggestions);
+            throw new UnsafePasswordException("La contraseña no cumple con los estándares de seguridad requeridos.",
+                suggestions);
         }
-        
+
         var newPasswordHash = _passwordHashService.HashPassword(newPassword.Value);
 
         // 4. Verificar que no sea la misma contraseña actual
         if (_passwordHashService.VerifyPassword(request.NewPassword, user.PasswordHash))
         {
-            _logger.LogWarning("Intento de usar la misma contraseña actual para usuario {UserId} ({Email}) desde IP {ClientIp}", 
+            _logger.LogWarning(
+                "Intento de usar la misma contraseña actual para usuario {UserId} ({Email}) desde IP {ClientIp}",
                 request.UserId, user.Email.Value, request.ClientIp);
             throw new PasswordRecentlyUsedException("La nueva contraseña debe ser diferente a la contraseña actual.");
         }
@@ -81,7 +84,8 @@ public class ChangePasswordHandler : IRequestHandler<ChangePasswordCommand, Chan
         // 5. Verificar que la contraseña no fue usada recientemente
         if (user.IsPasswordRecentlyUsed(newPasswordHash))
         {
-            _logger.LogWarning("Intento de reutilizar contraseña reciente para usuario {UserId} ({Email}) desde IP {ClientIp}", 
+            _logger.LogWarning(
+                "Intento de reutilizar contraseña reciente para usuario {UserId} ({Email}) desde IP {ClientIp}",
                 request.UserId, user.Email.Value, request.ClientIp);
             throw new PasswordRecentlyUsedException();
         }
@@ -100,7 +104,7 @@ public class ChangePasswordHandler : IRequestHandler<ChangePasswordCommand, Chan
 
             // Log de auditoría detallado
             _logger.LogInformation("Contraseña cambiada exitosamente para usuario {UserId} ({Email}) el {Timestamp}. " +
-                "Cambio realizado desde IP {ClientIp} con User-Agent: {UserAgent}",
+                                   "Cambio realizado desde IP {ClientIp} con User-Agent: {UserAgent}",
                 request.UserId, user.Email.Value, changeTimestamp, request.ClientIp, request.UserAgent);
 
             // 8. Enviar notificación por email
@@ -110,18 +114,20 @@ public class ChangePasswordHandler : IRequestHandler<ChangePasswordCommand, Chan
                 {
                     var deviceInfo = $"IP: {request.ClientIp}, Navegador: {request.UserAgent}";
                     await _emailService.SendPasswordChangeNotificationAsync(
-                        user.Email.Value, 
-                        user.FirstName, 
+                        user.Email.Value,
+                        user.FirstName,
                         changeTimestamp,
                         deviceInfo,
                         CancellationToken.None);
-                    
-                    _logger.LogInformation("Notificación de cambio de contraseña enviada a {Email} para usuario {UserId}", 
+
+                    _logger.LogInformation(
+                        "Notificación de cambio de contraseña enviada a {Email} para usuario {UserId}",
                         user.Email.Value, request.UserId);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error al enviar notificación de cambio de contraseña a {Email} para usuario {UserId}", 
+                    _logger.LogError(ex,
+                        "Error al enviar notificación de cambio de contraseña a {Email} para usuario {UserId}",
                         user.Email.Value, request.UserId);
                 }
             }, CancellationToken.None);
@@ -134,9 +140,9 @@ public class ChangePasswordHandler : IRequestHandler<ChangePasswordCommand, Chan
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error al cambiar contraseña para usuario {UserId} ({Email}) desde IP {ClientIp}", 
+            _logger.LogError(ex, "Error al cambiar contraseña para usuario {UserId} ({Email}) desde IP {ClientIp}",
                 request.UserId, user.Email.Value, request.ClientIp);
             throw;
         }
     }
-} 
+}

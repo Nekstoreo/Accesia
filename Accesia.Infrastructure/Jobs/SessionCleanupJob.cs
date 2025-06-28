@@ -1,15 +1,15 @@
+using Accesia.Application.Common.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Accesia.Application.Common.Interfaces;
 
 namespace Accesia.Infrastructure.Jobs;
 
 public class SessionCleanupJob : BackgroundService
 {
-    private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<SessionCleanupJob> _logger;
     private readonly TimeSpan _period = TimeSpan.FromHours(1); // Ejecutar cada hora
+    private readonly IServiceProvider _serviceProvider;
 
     public SessionCleanupJob(IServiceProvider serviceProvider, ILogger<SessionCleanupJob> logger)
     {
@@ -51,4 +51,4 @@ public class SessionCleanupJob : BackgroundService
             _logger.LogError(ex, "Error durante la limpieza de sesiones");
         }
     }
-} 
+}

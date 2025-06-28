@@ -1,14 +1,11 @@
-using MediatR;
-using Accesia.Application.Features.Authentication.DTOs;
+using Accesia.Application.Common.Exceptions;
 using Accesia.Application.Common.Interfaces;
+using Accesia.Application.Features.Authentication.DTOs;
 using Accesia.Domain.Entities;
+using Accesia.Domain.Enums;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Accesia.Application.Common.Exceptions;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-using Accesia.Domain.Enums;
 
 namespace Accesia.Application.Features.Authentication.Commands.VerifyEmail;
 
@@ -44,7 +41,8 @@ public class VerifyEmailHandler : IRequestHandler<VerifyEmailCommand, VerifyEmai
 
         if (user == null)
         {
-            _logger.LogWarning("Token de verificación no encontrado: {Token}, Email: {Email}", request.Token, request.Email);
+            _logger.LogWarning("Token de verificación no encontrado: {Token}, Email: {Email}", request.Token,
+                request.Email);
             throw new InvalidVerificationTokenException("Token no encontrado", request.Token, request.Email);
         }
 
@@ -65,9 +63,10 @@ public class VerifyEmailHandler : IRequestHandler<VerifyEmailCommand, VerifyEmai
         // Verificar que el usuario esté en estado PendingConfirmation
         if (user.Status != UserStatus.PendingConfirmation && user.Status != UserStatus.EmailPendingVerification)
         {
-            _logger.LogWarning("Estado de usuario incorrecto para verificación de email: {Estado}, Email: {Email}", 
+            _logger.LogWarning("Estado de usuario incorrecto para verificación de email: {Estado}, Email: {Email}",
                 user.Status, request.Email);
-            throw new InvalidOperationException($"El estado del usuario ({user.Status}) no permite la verificación de email");
+            throw new InvalidOperationException(
+                $"El estado del usuario ({user.Status}) no permite la verificación de email");
         }
 
         //Verificar email
@@ -89,9 +88,8 @@ public class VerifyEmailHandler : IRequestHandler<VerifyEmailCommand, VerifyEmai
 
         //Registrar intento en rate limiting
         if (request.ClientIpAddress != null)
-        {
-            await _rateLimitService.RecordActionAttemptAsync(request.ClientIpAddress, EMAIL_VERIFICATION_ACTION, cancellationToken);
-        }
+            await _rateLimitService.RecordActionAttemptAsync(request.ClientIpAddress, EMAIL_VERIFICATION_ACTION,
+                cancellationToken);
 
         //Retornar response exitoso
         return new VerifyEmailResponse
@@ -108,13 +106,18 @@ public class VerifyEmailHandler : IRequestHandler<VerifyEmailCommand, VerifyEmai
     {
         if (clientIpAddress != null)
         {
-            bool canPerformAction = await _rateLimitService.CanPerformActionAsync(clientIpAddress, EMAIL_VERIFICATION_ACTION, cancellationToken);
+            var canPerformAction =
+                await _rateLimitService.CanPerformActionAsync(clientIpAddress, EMAIL_VERIFICATION_ACTION,
+                    cancellationToken);
             if (!canPerformAction)
             {
-                TimeSpan cooldown = await _rateLimitService.GetRemainingCooldownAsync(clientIpAddress, EMAIL_VERIFICATION_ACTION, cancellationToken);
-                _logger.LogWarning("Rate limit excedido para verificación de email. IP: {IP}, Cooldown: {Cooldown}", 
+                var cooldown = await _rateLimitService.GetRemainingCooldownAsync(clientIpAddress,
+                    EMAIL_VERIFICATION_ACTION, cancellationToken);
+                _logger.LogWarning("Rate limit excedido para verificación de email. IP: {IP}, Cooldown: {Cooldown}",
                     clientIpAddress, cooldown);
-                throw new RateLimitExceededException($"Demasiados intentos de verificación de email. Máximo {MAX_ATTEMPTS_PER_HOUR} por hora.", cooldown);
+                throw new RateLimitExceededException(
+                    $"Demasiados intentos de verificación de email. Máximo {MAX_ATTEMPTS_PER_HOUR} por hora.",
+                    cooldown);
             }
         }
     }
@@ -126,11 +129,8 @@ public class VerifyEmailHandler : IRequestHandler<VerifyEmailCommand, VerifyEmai
 
     private async Task<bool> IsTokenExpiredAsync(User user, CancellationToken cancellationToken)
     {
-        if (!user.EmailVerificationTokenExpiresAt.HasValue)
-        {
-            return true;
-        }
-        
+        if (!user.EmailVerificationTokenExpiresAt.HasValue) return true;
+
         return await Task.FromResult(user.EmailVerificationTokenExpiresAt.Value < DateTime.UtcNow);
     }
 

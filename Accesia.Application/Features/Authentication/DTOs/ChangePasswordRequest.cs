@@ -15,4 +15,4 @@ public class ChangePasswordRequest
     [Required(ErrorMessage = "La confirmación de contraseña es requerida")]
     [Compare(nameof(NewPassword), ErrorMessage = "Las contraseñas no coinciden")]
     public string ConfirmPassword { get; set; } = string.Empty;
-} 
+}

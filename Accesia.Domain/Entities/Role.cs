@@ -35,7 +35,7 @@ public class Role : AuditableEntity
     // Navegación y relaciones
     public Role? ParentRole { get; set; }
     public ICollection<Role> ChildRoles { get; set; } = new List<Role>();
-    
+
     // Relaciones many-to-many a través de entidades de unión
     public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
     public ICollection<RolePermission> RolePermissions { get; set; } = new List<RolePermission>();
@@ -107,10 +107,7 @@ public class Role : AuditableEntity
     public void RemovePermission(Guid permissionId)
     {
         var rolePermission = RolePermissions.FirstOrDefault(rp => rp.PermissionId == permissionId && rp.IsActive);
-        if (rolePermission != null)
-        {
-            rolePermission.Revoke();
-        }
+        if (rolePermission != null) rolePermission.Revoke();
     }
 
     public bool HasPermission(string permissionName)
@@ -128,12 +125,8 @@ public class Role : AuditableEntity
             .ToHashSet();
 
         if (IsInherited && ParentRole != null)
-        {
             foreach (var parentPermission in ParentRole.GetEffectivePermissions())
-            {
                 effectivePermissions.Add(parentPermission);
-            }
-        }
 
         return effectivePermissions;
     }
@@ -161,7 +154,7 @@ public class Role : AuditableEntity
     public bool IsWithinUserLimit()
     {
         if (!MaxUsers.HasValue) return true;
-        
+
         var activeUserCount = UserRoles.Count(ur => ur.IsActive);
         return activeUserCount < MaxUsers.Value;
     }
@@ -217,7 +210,7 @@ public class Role : AuditableEntity
     // Utilidades
     public int CalculateEffectiveLevel()
     {
-        int effectiveLevel = Level;
+        var effectiveLevel = Level;
         var currentRole = ParentRole;
 
         while (currentRole != null)

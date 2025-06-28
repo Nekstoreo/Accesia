@@ -1,5 +1,5 @@
-using FluentValidation;
 using Accesia.Application.Features.Authentication.DTOs;
+using FluentValidation;
 
 namespace Accesia.Application.Features.Authentication.Validators;
 
@@ -26,4 +26,4 @@ public class LoginRequestValidator : AbstractValidator<LoginRequest>
             .WithMessage("El nombre del dispositivo no puede exceder 100 caracteres")
             .When(x => !string.IsNullOrEmpty(x.DeviceName));
     }
-} 
+}

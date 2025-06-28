@@ -5,4 +5,4 @@ public enum PrivacyLevel
     Public = 1,
     FriendsOnly = 2,
     Private = 3
-} 
+}

@@ -1,17 +1,17 @@
-using MediatR;
-using Microsoft.Extensions.Logging;
-using Microsoft.EntityFrameworkCore;
-using Accesia.Application.Features.Authentication.DTOs;
-using Accesia.Application.Common.Interfaces;
 using Accesia.Application.Common.Exceptions;
+using Accesia.Application.Common.Interfaces;
+using Accesia.Application.Features.Authentication.DTOs;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Accesia.Application.Features.Authentication.Commands.RequestPasswordReset;
 
 public class RequestPasswordResetHandler : IRequestHandler<RequestPasswordResetCommand, RequestPasswordResetResponse>
 {
     private readonly IApplicationDbContext _context;
-    private readonly ILogger<RequestPasswordResetHandler> _logger;
     private readonly IEmailService _emailService;
+    private readonly ILogger<RequestPasswordResetHandler> _logger;
     private readonly IRateLimitService _rateLimitService;
     private readonly ITokenService _tokenService;
 
@@ -29,7 +29,8 @@ public class RequestPasswordResetHandler : IRequestHandler<RequestPasswordResetC
         _tokenService = tokenService;
     }
 
-    public async Task<RequestPasswordResetResponse> Handle(RequestPasswordResetCommand request, CancellationToken cancellationToken)
+    public async Task<RequestPasswordResetResponse> Handle(RequestPasswordResetCommand request,
+        CancellationToken cancellationToken)
     {
         _logger.LogInformation("Solicitud de restablecimiento de contraseña para email {Email}", request.Email);
 
@@ -53,7 +54,7 @@ public class RequestPasswordResetHandler : IRequestHandler<RequestPasswordResetC
             try
             {
                 await _context.SaveChangesAsync(cancellationToken);
-                
+
                 _logger.LogInformation("Token de restablecimiento generado para usuario {UserId}", user.Id);
 
                 // Enviar email de restablecimiento de forma asíncrona
@@ -62,10 +63,10 @@ public class RequestPasswordResetHandler : IRequestHandler<RequestPasswordResetC
                     try
                     {
                         await _emailService.SendPasswordResetAsync(
-                            user.Email.Value, 
-                            resetToken, 
+                            user.Email.Value,
+                            resetToken,
                             CancellationToken.None);
-                        
+
                         _logger.LogInformation("Email de restablecimiento enviado a {Email}", request.Email);
                     }
                     catch (Exception ex)
@@ -87,17 +88,16 @@ public class RequestPasswordResetHandler : IRequestHandler<RequestPasswordResetC
 
         // 4. Registrar el intento en rate limiting
         if (!string.IsNullOrEmpty(request.ClientIpAddress))
-        {
             await _rateLimitService.RecordActionAttemptAsync(
-                request.ClientIpAddress, 
+                request.ClientIpAddress,
                 "password_reset_request");
-        }
 
         // 5. Siempre retornar la misma respuesta genérica (no revelar si el usuario existe)
         return new RequestPasswordResetResponse
         {
             Success = true,
-            Message = "Si el email está registrado en nuestro sistema, recibirás instrucciones de restablecimiento de contraseña."
+            Message =
+                "Si el email está registrado en nuestro sistema, recibirás instrucciones de restablecimiento de contraseña."
         };
     }
 
@@ -107,12 +107,13 @@ public class RequestPasswordResetHandler : IRequestHandler<RequestPasswordResetC
             return;
 
         var canRequest = await _rateLimitService.CanPerformActionAsync(ipAddress, "password_reset_request");
-        
+
         if (!canRequest)
         {
             var cooldown = await _rateLimitService.GetRemainingCooldownAsync(ipAddress, "password_reset_request");
-            _logger.LogWarning("Solicitud de restablecimiento bloqueada por rate limit desde IP {IpAddress}", ipAddress);
+            _logger.LogWarning("Solicitud de restablecimiento bloqueada por rate limit desde IP {IpAddress}",
+                ipAddress);
             throw new RateLimitExceededException(cooldown);
         }
     }
-} 
+}

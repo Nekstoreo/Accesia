@@ -1,6 +1,6 @@
-using FluentValidation;
 using Accesia.Application.Features.Authentication.DTOs;
 using Accesia.Domain.ValueObjects;
+using FluentValidation;
 
 namespace Accesia.Application.Features.Authentication.Validators;
 
@@ -12,10 +12,12 @@ public class RegisterUserRequestValidator : AbstractValidator<RegisterUserReques
             .NotEmpty().WithMessage("El email es obligatorio")
             .EmailAddress().WithMessage("El formato del email no es válido")
             .Must(BeValidEmail).WithMessage("El email no tiene un formato válido");
-    
+
         RuleFor(x => x.Password)
             .NotEmpty().WithMessage("La contraseña es obligatoria")
-            .Must(BeStrongPassword).WithMessage("La contraseña debe tener al menos 8 caracteres, incluir mayúsculas, minúsculas, números y caracteres especiales");
+            .Must(BeStrongPassword)
+            .WithMessage(
+                "La contraseña debe tener al menos 8 caracteres, incluir mayúsculas, minúsculas, números y caracteres especiales");
 
         RuleFor(x => x.ConfirmPassword)
             .Equal(x => x.Password).WithMessage("Las contraseñas no coinciden");

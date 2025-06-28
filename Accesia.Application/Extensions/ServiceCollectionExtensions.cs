@@ -1,9 +1,8 @@
+using Accesia.Application.Common.Behaviors;
 using FluentValidation;
 using FluentValidation.AspNetCore;
-using Microsoft.Extensions.DependencyInjection;
 using MediatR;
-using Accesia.Application.Features.Authentication.Validators;
-using Accesia.Application.Common.Behaviors;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Accesia.Application.Extensions;
 
@@ -17,11 +16,8 @@ public static class ServiceCollectionExtensions
         services.AddFluentValidationClientsideAdapters();
 
         // Registrar MediatR
-        services.AddMediatR(cfg => 
-        {
-            cfg.RegisterServicesFromAssembly(typeof(ServiceCollectionExtensions).Assembly);
-        });
-        
+        services.AddMediatR(cfg => { cfg.RegisterServicesFromAssembly(typeof(ServiceCollectionExtensions).Assembly); });
+
         // Registrar ValidationBehavior como un pipeline behavior
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 

@@ -1,9 +1,9 @@
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using Accesia.Application.Common.Interfaces;
 using Accesia.Domain.Entities;
-using Accesia.Domain.ValueObjects;
 using Accesia.Domain.Enums;
+using Accesia.Domain.ValueObjects;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Accesia.Infrastructure.Services;
 
@@ -18,7 +18,8 @@ public class SessionService : ISessionService
         _logger = logger;
     }
 
-    public async Task<Session> CreateSessionAsync(User user, DeviceInfo deviceInfo, LocationInfo locationInfo, string loginMethod, CancellationToken cancellationToken = default)
+    public async Task<Session> CreateSessionAsync(User user, DeviceInfo deviceInfo, LocationInfo locationInfo,
+        string loginMethod, CancellationToken cancellationToken = default)
     {
         // Verificar si es un dispositivo conocido
         var isKnownDevice = await IsKnownDeviceAsync(user.Id, deviceInfo, cancellationToken);
@@ -48,13 +49,14 @@ public class SessionService : ISessionService
         _context.Sessions.Add(session);
         await _context.SaveChangesAsync(cancellationToken);
 
-        _logger.LogInformation("Sesión creada para usuario {UserId} con token {SessionToken}", 
+        _logger.LogInformation("Sesión creada para usuario {UserId} con token {SessionToken}",
             user.Id, session.SessionToken);
 
         return session;
     }
 
-    public async Task<Session?> GetSessionByTokenAsync(string sessionToken, CancellationToken cancellationToken = default)
+    public async Task<Session?> GetSessionByTokenAsync(string sessionToken,
+        CancellationToken cancellationToken = default)
     {
         return await _context.Sessions
             .Include(s => s.User)
@@ -72,7 +74,7 @@ public class SessionService : ISessionService
             session.GenerateNewRefreshToken();
             session.UpdateLastActivity();
             await _context.SaveChangesAsync(cancellationToken);
-            
+
             _logger.LogInformation("Sesión renovada para usuario {UserId}", session.UserId);
             return session;
         }
@@ -89,8 +91,8 @@ public class SessionService : ISessionService
         {
             session.Revoke();
             await _context.SaveChangesAsync(cancellationToken);
-            
-            _logger.LogInformation("Sesión revocada: {SessionToken} para usuario {UserId}", 
+
+            _logger.LogInformation("Sesión revocada: {SessionToken} para usuario {UserId}",
                 sessionToken, session.UserId);
         }
     }
@@ -101,36 +103,31 @@ public class SessionService : ISessionService
             .Where(s => s.UserId == userId && s.Status == SessionStatus.Active)
             .ToListAsync(cancellationToken);
 
-        foreach (var session in sessions)
-        {
-            session.Revoke();
-        }
+        foreach (var session in sessions) session.Revoke();
 
         if (sessions.Any())
         {
             await _context.SaveChangesAsync(cancellationToken);
-            _logger.LogInformation("Todas las sesiones revocadas para usuario {UserId}. Total: {Count}", 
+            _logger.LogInformation("Todas las sesiones revocadas para usuario {UserId}. Total: {Count}",
                 userId, sessions.Count);
         }
     }
 
-    public async Task RevokeAllUserSessionsExceptCurrentAsync(Guid userId, string currentSessionToken, CancellationToken cancellationToken = default)
+    public async Task RevokeAllUserSessionsExceptCurrentAsync(Guid userId, string currentSessionToken,
+        CancellationToken cancellationToken = default)
     {
         var sessions = await _context.Sessions
-            .Where(s => s.UserId == userId && 
-                       s.Status == SessionStatus.Active && 
-                       s.SessionToken != currentSessionToken)
+            .Where(s => s.UserId == userId &&
+                        s.Status == SessionStatus.Active &&
+                        s.SessionToken != currentSessionToken)
             .ToListAsync(cancellationToken);
 
-        foreach (var session in sessions)
-        {
-            session.Revoke();
-        }
+        foreach (var session in sessions) session.Revoke();
 
         if (sessions.Any())
         {
             await _context.SaveChangesAsync(cancellationToken);
-            _logger.LogInformation("Sesiones adicionales revocadas para usuario {UserId}. Total: {Count}", 
+            _logger.LogInformation("Sesiones adicionales revocadas para usuario {UserId}. Total: {Count}",
                 userId, sessions.Count);
         }
     }
@@ -158,14 +155,11 @@ public class SessionService : ISessionService
     public async Task CleanupExpiredSessionsAsync(CancellationToken cancellationToken = default)
     {
         var expiredSessions = await _context.Sessions
-            .Where(s => s.Status == SessionStatus.Active && 
-                       (s.ExpiresAt < DateTime.UtcNow || s.RefreshTokenExpiresAt < DateTime.UtcNow))
+            .Where(s => s.Status == SessionStatus.Active &&
+                        (s.ExpiresAt < DateTime.UtcNow || s.RefreshTokenExpiresAt < DateTime.UtcNow))
             .ToListAsync(cancellationToken);
 
-        foreach (var session in expiredSessions)
-        {
-            session.Expire();
-        }
+        foreach (var session in expiredSessions) session.Expire();
 
         if (expiredSessions.Any())
         {
@@ -177,10 +171,10 @@ public class SessionService : ISessionService
     private async Task<bool> IsKnownDeviceAsync(Guid userId, DeviceInfo deviceInfo, CancellationToken cancellationToken)
     {
         return await _context.Sessions
-            .AnyAsync(s => s.UserId == userId && 
-                          s.DeviceInfo.DeviceFingerprint == deviceInfo.DeviceFingerprint &&
-                          s.Status == SessionStatus.Active, 
-                      cancellationToken);
+            .AnyAsync(s => s.UserId == userId &&
+                           s.DeviceInfo.DeviceFingerprint == deviceInfo.DeviceFingerprint &&
+                           s.Status == SessionStatus.Active,
+                cancellationToken);
     }
 
     private static LoginMethod ParseLoginMethod(string loginMethod)
@@ -198,7 +192,8 @@ public class SessionService : ISessionService
         };
     }
 
-    private static int CalculateRiskScore(User user, DeviceInfo deviceInfo, LocationInfo locationInfo, bool isKnownDevice)
+    private static int CalculateRiskScore(User user, DeviceInfo deviceInfo, LocationInfo locationInfo,
+        bool isKnownDevice)
     {
         var riskScore = 0;
 
@@ -215,4 +210,4 @@ public class SessionService : ISessionService
 
         return Math.Min(riskScore, 100); // Máximo 100
     }
-} 
+}

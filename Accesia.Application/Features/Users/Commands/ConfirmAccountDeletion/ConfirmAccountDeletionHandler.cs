@@ -1,19 +1,19 @@
+using Accesia.Application.Common.Exceptions;
+using Accesia.Application.Common.Interfaces;
+using Accesia.Application.Features.Users.DTOs;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Accesia.Application.Common.Interfaces;
-using Accesia.Application.Common.Exceptions;
-using Accesia.Application.Features.Users.DTOs;
-using Accesia.Domain.Enums;
 
 namespace Accesia.Application.Features.Users.Commands.ConfirmAccountDeletion;
 
-public class ConfirmAccountDeletionHandler : IRequestHandler<ConfirmAccountDeletionCommand, ConfirmAccountDeletionResponse>
+public class
+    ConfirmAccountDeletionHandler : IRequestHandler<ConfirmAccountDeletionCommand, ConfirmAccountDeletionResponse>
 {
     private readonly IApplicationDbContext _context;
     private readonly IEmailService _emailService;
-    private readonly ISessionService _sessionService;
     private readonly ILogger<ConfirmAccountDeletionHandler> _logger;
+    private readonly ISessionService _sessionService;
 
     public ConfirmAccountDeletionHandler(
         IApplicationDbContext context,
@@ -27,7 +27,8 @@ public class ConfirmAccountDeletionHandler : IRequestHandler<ConfirmAccountDelet
         _logger = logger;
     }
 
-    public async Task<ConfirmAccountDeletionResponse> Handle(ConfirmAccountDeletionCommand request, CancellationToken cancellationToken)
+    public async Task<ConfirmAccountDeletionResponse> Handle(ConfirmAccountDeletionCommand request,
+        CancellationToken cancellationToken)
     {
         // Buscar usuario por token de eliminación
         var user = await _context.Users
@@ -35,11 +36,13 @@ public class ConfirmAccountDeletionHandler : IRequestHandler<ConfirmAccountDelet
             .FirstOrDefaultAsync(u => u.AccountDeletionToken == request.Request.DeletionToken, cancellationToken);
 
         if (user == null)
-            throw new BusinessRuleException("AccountDeletion", "TokenValidation", "Token de confirmación inválido o expirado");
+            throw new BusinessRuleException("AccountDeletion", "TokenValidation",
+                "Token de confirmación inválido o expirado");
 
         // Verificar que el token es válido
         if (!user.IsAccountDeletionTokenValid(request.Request.DeletionToken))
-            throw new BusinessRuleException("AccountDeletion", "TokenValidation", "Token de confirmación inválido o expirado");
+            throw new BusinessRuleException("AccountDeletion", "TokenValidation",
+                "Token de confirmación inválido o expirado");
 
         try
         {
@@ -52,7 +55,7 @@ public class ConfirmAccountDeletionHandler : IRequestHandler<ConfirmAccountDelet
             await _context.SaveChangesAsync(cancellationToken);
 
             // Calcular fecha de eliminación permanente (30 días por defecto)
-            var permanentDeletionDate = user.GetPermanentDeletionDate(30);
+            var permanentDeletionDate = user.GetPermanentDeletionDate();
 
             // Enviar email de confirmación de eliminación
             await _emailService.SendAccountMarkedForDeletionEmailAsync(
@@ -61,13 +64,15 @@ public class ConfirmAccountDeletionHandler : IRequestHandler<ConfirmAccountDelet
                 permanentDeletionDate ?? DateTime.UtcNow.AddDays(30),
                 cancellationToken);
 
-            _logger.LogInformation("Usuario {UserId} confirmó eliminación desde IP {ClientIp}. Eliminación permanente: {PermanentDeletionDate}",
+            _logger.LogInformation(
+                "Usuario {UserId} confirmó eliminación desde IP {ClientIp}. Eliminación permanente: {PermanentDeletionDate}",
                 user.Id, request.ClientIpAddress, permanentDeletionDate);
 
             return new ConfirmAccountDeletionResponse
             {
                 Success = true,
-                Message = "Su cuenta ha sido marcada para eliminación. Tiene 30 días para cancelar esta acción antes de que sea eliminada permanentemente",
+                Message =
+                    "Su cuenta ha sido marcada para eliminación. Tiene 30 días para cancelar esta acción antes de que sea eliminada permanentemente",
                 DeletedAt = DateTime.UtcNow,
                 PermanentDeletionDate = permanentDeletionDate
             };
@@ -75,7 +80,8 @@ public class ConfirmAccountDeletionHandler : IRequestHandler<ConfirmAccountDelet
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error al confirmar eliminación para token {Token}", request.Request.DeletionToken);
-            throw new BusinessRuleException("AccountDeletion", $"User:{user.Id}", "Error al procesar la confirmación de eliminación");
+            throw new BusinessRuleException("AccountDeletion", $"User:{user.Id}",
+                "Error al procesar la confirmación de eliminación");
         }
     }
-} 
+}

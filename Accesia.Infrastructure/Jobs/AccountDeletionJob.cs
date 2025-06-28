@@ -1,18 +1,18 @@
+using Accesia.Application.Common.Interfaces;
+using Accesia.Domain.Enums;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.EntityFrameworkCore;
-using Accesia.Application.Common.Interfaces;
-using Accesia.Domain.Enums;
 
 namespace Accesia.Infrastructure.Jobs;
 
 public class AccountDeletionJob : BackgroundService
 {
-    private readonly IServiceProvider _serviceProvider;
+    private const int GracePeriodDays = 30;
     private readonly ILogger<AccountDeletionJob> _logger;
     private readonly TimeSpan _period = TimeSpan.FromHours(6); // Ejecutar cada 6 horas
-    private const int GracePeriodDays = 30;
+    private readonly IServiceProvider _serviceProvider;
 
     public AccountDeletionJob(IServiceProvider serviceProvider, ILogger<AccountDeletionJob> logger)
     {
@@ -49,11 +49,11 @@ public class AccountDeletionJob : BackgroundService
         {
             // Buscar cuentas marcadas para eliminación que estén fuera del período de gracia
             var cutoffDate = DateTime.UtcNow.AddDays(-GracePeriodDays);
-            
+
             var accountsToDelete = await context.Users
-                .Where(u => u.Status == UserStatus.MarkedForDeletion && 
-                           u.MarkedForDeletionAt.HasValue && 
-                           u.MarkedForDeletionAt.Value <= cutoffDate)
+                .Where(u => u.Status == UserStatus.MarkedForDeletion &&
+                            u.MarkedForDeletionAt.HasValue &&
+                            u.MarkedForDeletionAt.Value <= cutoffDate)
                 .Include(u => u.Sessions)
                 .Include(u => u.UserRoles)
                 .Include(u => u.PasswordHistories)
@@ -70,10 +70,9 @@ public class AccountDeletionJob : BackgroundService
             _logger.LogInformation("Encontradas {Count} cuentas para eliminación permanente", accountsToDelete.Count);
 
             foreach (var user in accountsToDelete)
-            {
                 try
                 {
-                    _logger.LogInformation("Eliminando permanentemente cuenta del usuario {UserId} ({Email})", 
+                    _logger.LogInformation("Eliminando permanentemente cuenta del usuario {UserId} ({Email})",
                         user.Id, user.Email.Value);
 
                     // Enviar email final de notificación antes de eliminar
@@ -83,10 +82,7 @@ public class AccountDeletionJob : BackgroundService
                         cancellationToken);
 
                     // Eliminar datos relacionados en orden correcto
-                    if (user.Settings != null)
-                    {
-                        context.UserSettings.Remove(user.Settings);
-                    }
+                    if (user.Settings != null) context.UserSettings.Remove(user.Settings);
 
                     // Eliminar relaciones (EF Core debería manejar esto con OnDelete Cascade)
                     context.Users.Remove(user);
@@ -98,15 +94,15 @@ public class AccountDeletionJob : BackgroundService
                     _logger.LogError(ex, "Error al eliminar permanentemente el usuario {UserId}", user.Id);
                     // Continuar con los demás usuarios incluso si uno falla
                 }
-            }
 
             // Guardar todos los cambios
             var deletedCount = await context.SaveChangesAsync(cancellationToken);
-            _logger.LogInformation("Eliminación permanente completada. {Count} usuarios eliminados", accountsToDelete.Count);
+            _logger.LogInformation("Eliminación permanente completada. {Count} usuarios eliminados",
+                accountsToDelete.Count);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error durante el proceso de eliminación permanente de cuentas");
         }
     }
-} 
+}

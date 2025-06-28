@@ -1,5 +1,5 @@
-using FluentValidation;
 using Accesia.Application.Features.Users.DTOs;
+using FluentValidation;
 
 namespace Accesia.Application.Features.Users.Validators;
 
@@ -13,4 +13,4 @@ public class CancelAccountDeletionRequestValidator : AbstractValidator<CancelAcc
             .Length(32, 256)
             .WithMessage("El token de cancelación tiene un formato inválido");
     }
-} 
+}

@@ -1,9 +1,9 @@
+using Accesia.Application.Common.Exceptions;
+using Accesia.Application.Common.Interfaces;
+using Accesia.Application.Features.Users.DTOs;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Accesia.Application.Common.Interfaces;
-using Accesia.Application.Common.Exceptions;
-using Accesia.Application.Features.Users.DTOs;
 
 namespace Accesia.Application.Features.Users.Queries.GetUserProfile;
 
@@ -50,4 +50,4 @@ public class GetUserProfileHandler : IRequestHandler<GetUserProfileQuery, UserPr
             Status = user.Status.ToString()
         };
     }
-} 
+}

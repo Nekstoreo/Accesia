@@ -1,10 +1,10 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
-using Microsoft.EntityFrameworkCore;
 using Accesia.Application.Common.Interfaces;
-using Accesia.Domain.ValueObjects;
 using Accesia.Domain.Enums;
+using Accesia.Domain.ValueObjects;
+using Microsoft.EntityFrameworkCore;
 
 namespace Accesia.Infrastructure.Services;
 
@@ -25,12 +25,12 @@ public class DeviceInfoService : IDeviceInfoService
         var deviceFingerprint = GenerateDeviceFingerprint(userAgent, additionalInfo);
 
         return new DeviceInfo(
-            userAgent: userAgent,
-            deviceType: deviceType,
-            browser: browser,
-            browserVersion: "Unknown",
-            operatingSystem: operatingSystem,
-            deviceFingerprint: deviceFingerprint
+            userAgent,
+            deviceType,
+            browser,
+            "Unknown",
+            operatingSystem,
+            deviceFingerprint
         );
     }
 
@@ -40,28 +40,26 @@ public class DeviceInfoService : IDeviceInfoService
         var realIpAddress = GetRealIpAddress(ipAddress, forwardedFor);
 
         return new LocationInfo(
-            ipAddress: realIpAddress,
-            country: DetermineCountry(realIpAddress),
-            city: DetermineCity(realIpAddress),
-            region: null,
-            isp: null,
-            isVPN: false
+            realIpAddress,
+            DetermineCountry(realIpAddress),
+            DetermineCity(realIpAddress)
         );
     }
 
     public bool IsKnownDevice(Guid userId, DeviceInfo deviceInfo)
     {
         return _context.Sessions
-            .Any(s => s.UserId == userId && 
-                     s.DeviceInfo.DeviceFingerprint == deviceInfo.DeviceFingerprint);
+            .Any(s => s.UserId == userId &&
+                      s.DeviceInfo.DeviceFingerprint == deviceInfo.DeviceFingerprint);
     }
 
-    public async Task<bool> IsKnownDeviceAsync(Guid userId, DeviceInfo deviceInfo, CancellationToken cancellationToken = default)
+    public async Task<bool> IsKnownDeviceAsync(Guid userId, DeviceInfo deviceInfo,
+        CancellationToken cancellationToken = default)
     {
         return await _context.Sessions
-            .AnyAsync(s => s.UserId == userId && 
-                          s.DeviceInfo.DeviceFingerprint == deviceInfo.DeviceFingerprint,
-                      cancellationToken);
+            .AnyAsync(s => s.UserId == userId &&
+                           s.DeviceInfo.DeviceFingerprint == deviceInfo.DeviceFingerprint,
+                cancellationToken);
     }
 
     private static DeviceType DetectDeviceType(string userAgent)
@@ -71,19 +69,15 @@ public class DeviceInfoService : IDeviceInfoService
 
         var userAgentLower = userAgent.ToLowerInvariant();
 
-        if (userAgentLower.Contains("mobile") || 
-            userAgentLower.Contains("android") || 
-            userAgentLower.Contains("iphone") || 
+        if (userAgentLower.Contains("mobile") ||
+            userAgentLower.Contains("android") ||
+            userAgentLower.Contains("iphone") ||
             userAgentLower.Contains("ipod"))
-        {
             return DeviceType.Mobile;
-        }
 
-        if (userAgentLower.Contains("tablet") || 
+        if (userAgentLower.Contains("tablet") ||
             userAgentLower.Contains("ipad"))
-        {
             return DeviceType.Tablet;
-        }
 
         return DeviceType.Desktop;
     }
@@ -109,12 +103,8 @@ public class DeviceInfoService : IDeviceInfoService
         };
 
         foreach (var pattern in patterns)
-        {
             if (Regex.IsMatch(userAgent, pattern.Key, RegexOptions.IgnoreCase))
-            {
                 return pattern.Value;
-            }
-        }
 
         return "Unknown";
     }
@@ -135,12 +125,8 @@ public class DeviceInfoService : IDeviceInfoService
         };
 
         foreach (var pattern in patterns)
-        {
             if (Regex.IsMatch(userAgent, pattern.Key, RegexOptions.IgnoreCase))
-            {
                 return pattern.Value;
-            }
-        }
 
         return "Unknown";
     }
@@ -148,7 +134,7 @@ public class DeviceInfoService : IDeviceInfoService
     private static string GenerateDeviceFingerprint(string userAgent, string? additionalInfo)
     {
         var fingerprintData = $"{userAgent}|{additionalInfo ?? ""}";
-        
+
         using var sha256 = SHA256.Create();
         var hashBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(fingerprintData));
         return Convert.ToBase64String(hashBytes);
@@ -171,7 +157,7 @@ public class DeviceInfoService : IDeviceInfoService
     {
         // En una implementación real, aquí se usaría un servicio de geolocalización
         // como MaxMind GeoIP2 o similar
-        
+
         // Por ahora, retornar null para indicar que no está implementado
         return null;
     }
@@ -180,7 +166,7 @@ public class DeviceInfoService : IDeviceInfoService
     {
         // En una implementación real, aquí se usaría un servicio de geolocalización
         // como MaxMind GeoIP2 o similar
-        
+
         // Por ahora, retornar null para indicar que no está implementado
         return null;
     }

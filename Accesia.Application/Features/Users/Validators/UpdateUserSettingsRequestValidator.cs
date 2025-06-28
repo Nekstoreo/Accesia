@@ -1,5 +1,5 @@
-using FluentValidation;
 using Accesia.Application.Features.Users.DTOs;
+using FluentValidation;
 
 namespace Accesia.Application.Features.Users.Validators;
 
@@ -89,4 +89,4 @@ public class UpdateUserSettingsRequestValidator : AbstractValidator<UpdateUserSe
 
         return timeFormat is "12h" or "24h";
     }
-} 
+}

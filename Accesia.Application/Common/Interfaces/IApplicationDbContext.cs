@@ -1,5 +1,5 @@
-using Microsoft.EntityFrameworkCore;
 using Accesia.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace Accesia.Application.Common.Interfaces;
 
@@ -17,4 +17,4 @@ public interface IApplicationDbContext
     DbSet<SecurityAuditLog> SecurityAuditLogs { get; set; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
-} 
+}

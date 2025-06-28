@@ -1,25 +1,37 @@
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 using Accesia.Domain.Common;
-using Accesia.Domain.ValueObjects;
 using Accesia.Domain.Enums;
+using Accesia.Domain.ValueObjects;
 
 namespace Accesia.Domain.Entities;
 
 public class User : AuditableEntity
 {
+    // Constructor privado para EF Core
+    private User()
+    {
+    }
+
+    [SetsRequiredMembers]
+    public User(Email email, string passwordHash, string firstName, string lastName)
+    {
+        Email = email;
+        PasswordHash = passwordHash;
+        FirstName = firstName;
+        LastName = lastName;
+        Status = UserStatus.PendingConfirmation;
+        IsEmailVerified = false;
+        PasswordChangedAt = DateTime.UtcNow;
+        FailedLoginAttempts = 0;
+    }
+
     // Información básica del usuario
-    [Required]
-    [EmailAddress]
-    public required Email Email { get; set; }
-    [Required]
-    public required string PasswordHash { get; set; }
-    [Required]
-    [MaxLength(100)]
-    public required string FirstName { get; set; }
-    [Required]
-    [MaxLength(100)]
-    public required string LastName { get; set; }
+    [Required] [EmailAddress] public required Email Email { get; set; }
+    [Required] public required string PasswordHash { get; set; }
+    [Required] [MaxLength(100)] public required string FirstName { get; set; }
+    [Required] [MaxLength(100)] public required string LastName { get; set; }
+
     [Required]
     [EnumDataType(typeof(UserStatus))]
     public UserStatus Status { get; set; }
@@ -56,22 +68,6 @@ public class User : AuditableEntity
     public ICollection<UserAuditLog> AuditLogs { get; set; } = new List<UserAuditLog>();
     public UserSettings? Settings { get; set; }
 
-    // Constructor privado para EF Core
-    private User() { }
-
-    [SetsRequiredMembers]
-    public User(Email email, string passwordHash, string firstName, string lastName)
-    {
-        Email = email;
-        PasswordHash = passwordHash;
-        FirstName = firstName;
-        LastName = lastName;
-        Status = UserStatus.PendingConfirmation;
-        IsEmailVerified = false;
-        PasswordChangedAt = DateTime.UtcNow;
-        FailedLoginAttempts = 0;
-    }
-
     // Factory method estático CreateNewUser()
     public static User CreateNewUser(Email email, string passwordHash, string firstName, string lastName)
     {
@@ -104,7 +100,7 @@ public class User : AuditableEntity
     public void IncrementFailedLoginAttempts()
     {
         FailedLoginAttempts++;
-        
+
         // Bloqueo exponencial basado en número de intentos
         if (FailedLoginAttempts >= GetMaxFailedAttempts())
         {
@@ -122,11 +118,8 @@ public class User : AuditableEntity
     {
         LastLoginAt = DateTime.UtcNow;
         ResetFailedLoginAttempts();
-        
-        if (Status == UserStatus.Blocked && !IsAccountLocked())
-        {
-            Status = UserStatus.Active;
-        }
+
+        if (Status == UserStatus.Blocked && !IsAccountLocked()) Status = UserStatus.Active;
     }
 
     private int GetMaxFailedAttempts()
@@ -139,11 +132,11 @@ public class User : AuditableEntity
         // Fórmula exponencial: 2^(intentos - maxIntentos) minutos
         var extraAttempts = FailedLoginAttempts - GetMaxFailedAttempts();
         var minutes = Math.Pow(2, extraAttempts + 1); // Comienza en 2 minutos
-        
+
         // Limitar a un máximo de 24 horas
         var maxMinutes = 24 * 60; // 24 horas
         minutes = Math.Min(minutes, maxMinutes);
-        
+
         return TimeSpan.FromMinutes(minutes);
     }
 
@@ -225,22 +218,22 @@ public class User : AuditableEntity
     }
 
     // Métodos para gestión de perfil
-    public void UpdateProfile(string? firstName = null, string? lastName = null, 
-                             string? phoneNumber = null, string? preferredLanguage = null, 
-                             string? timeZone = null)
+    public void UpdateProfile(string? firstName = null, string? lastName = null,
+        string? phoneNumber = null, string? preferredLanguage = null,
+        string? timeZone = null)
     {
         if (!string.IsNullOrWhiteSpace(firstName))
             FirstName = firstName;
-        
+
         if (!string.IsNullOrWhiteSpace(lastName))
             LastName = lastName;
-            
+
         if (phoneNumber != null) // Permitir valores vacíos para limpiar el teléfono
             PhoneNumber = string.IsNullOrWhiteSpace(phoneNumber) ? null : phoneNumber;
-            
+
         if (!string.IsNullOrWhiteSpace(preferredLanguage))
             PreferredLanguage = preferredLanguage;
-            
+
         if (!string.IsNullOrWhiteSpace(timeZone))
             TimeZone = timeZone;
     }
@@ -295,12 +288,9 @@ public class User : AuditableEntity
             throw new InvalidOperationException("No se puede desactivar una cuenta marcada para eliminación.");
 
         Status = UserStatus.Inactive;
-        
+
         // Cerrar todas las sesiones activas
-        foreach (var session in Sessions.Where(s => s.Status == SessionStatus.Active))
-        {
-            session.Revoke();
-        }
+        foreach (var session in Sessions.Where(s => s.Status == SessionStatus.Active)) session.Revoke();
     }
 
     public void BlockAccount(string reason = "")
@@ -309,24 +299,18 @@ public class User : AuditableEntity
             throw new InvalidOperationException("No se puede bloquear una cuenta marcada para eliminación.");
 
         Status = UserStatus.Blocked;
-        
+
         // Cerrar todas las sesiones activas
-        foreach (var session in Sessions.Where(s => s.Status == SessionStatus.Active))
-        {
-            session.Revoke();
-        }
+        foreach (var session in Sessions.Where(s => s.Status == SessionStatus.Active)) session.Revoke();
     }
 
     public void MarkForDeletion()
     {
         Status = UserStatus.MarkedForDeletion;
         MarkedForDeletionAt = DateTime.UtcNow;
-        
+
         // Cerrar todas las sesiones activas
-        foreach (var session in Sessions.Where(s => s.Status == SessionStatus.Active))
-        {
-            session.Revoke();
-        }
+        foreach (var session in Sessions.Where(s => s.Status == SessionStatus.Active)) session.Revoke();
     }
 
     public void RequestAccountDeletion(string deletionToken, DateTime tokenExpiration, string? reason = null)
@@ -357,11 +341,8 @@ public class User : AuditableEntity
             throw new InvalidOperationException("No hay solicitud de eliminación pendiente.");
 
         ClearAccountDeletionToken();
-        
-        if (Status == UserStatus.MarkedForDeletion)
-        {
-            RestoreFromDeletion();
-        }
+
+        if (Status == UserStatus.MarkedForDeletion) RestoreFromDeletion();
     }
 
     public void RestoreFromDeletion()
@@ -437,8 +418,10 @@ public class User : AuditableEntity
             UserStatus.Active => new[] { UserStatus.Inactive, UserStatus.Blocked, UserStatus.MarkedForDeletion },
             UserStatus.Inactive => new[] { UserStatus.Active, UserStatus.Blocked, UserStatus.MarkedForDeletion },
             UserStatus.Blocked => new[] { UserStatus.Active, UserStatus.Inactive, UserStatus.MarkedForDeletion },
-            UserStatus.PendingConfirmation => new[] { UserStatus.Active, UserStatus.Blocked, UserStatus.MarkedForDeletion },
-            UserStatus.EmailPendingVerification => new[] { UserStatus.Active, UserStatus.Blocked, UserStatus.MarkedForDeletion },
+            UserStatus.PendingConfirmation => new[]
+                { UserStatus.Active, UserStatus.Blocked, UserStatus.MarkedForDeletion },
+            UserStatus.EmailPendingVerification => new[]
+                { UserStatus.Active, UserStatus.Blocked, UserStatus.MarkedForDeletion },
             UserStatus.MarkedForDeletion => new[] { UserStatus.Inactive },
             _ => Array.Empty<UserStatus>()
         };

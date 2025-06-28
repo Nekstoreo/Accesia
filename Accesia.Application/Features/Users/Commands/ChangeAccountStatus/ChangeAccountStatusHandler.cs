@@ -1,9 +1,9 @@
+using Accesia.Application.Common.Exceptions;
+using Accesia.Application.Common.Interfaces;
+using Accesia.Application.Features.Users.DTOs;
+using Accesia.Domain.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using Accesia.Application.Common.Interfaces;
-using Accesia.Application.Common.Exceptions;
-using Accesia.Domain.Enums;
-using Accesia.Application.Features.Users.DTOs;
 
 namespace Accesia.Application.Features.Users.Commands.ChangeAccountStatus;
 
@@ -16,7 +16,8 @@ public class ChangeAccountStatusHandler : IRequestHandler<ChangeAccountStatusCom
         _context = context;
     }
 
-    public async Task<ChangeAccountStatusResponse> Handle(ChangeAccountStatusCommand request, CancellationToken cancellationToken)
+    public async Task<ChangeAccountStatusResponse> Handle(ChangeAccountStatusCommand request,
+        CancellationToken cancellationToken)
     {
         var user = await _context.Users
             .Include(u => u.Sessions)
@@ -27,9 +28,7 @@ public class ChangeAccountStatusHandler : IRequestHandler<ChangeAccountStatusCom
 
         // Validar que la transición es permitida
         if (!user.CanTransitionTo(request.NewStatus))
-        {
             throw new InvalidStateTransitionException(user.Id.ToString(), user.Status, request.NewStatus);
-        }
 
         var previousStatus = user.Status;
 
@@ -60,7 +59,8 @@ public class ChangeAccountStatusHandler : IRequestHandler<ChangeAccountStatusCom
             PreviousStatus = previousStatus,
             NewStatus = user.Status,
             StatusDescription = user.GetStatusDescription(),
-            Message = $"Estado de cuenta cambiado exitosamente de '{GetStatusDescription(previousStatus)}' a '{user.GetStatusDescription()}'",
+            Message =
+                $"Estado de cuenta cambiado exitosamente de '{GetStatusDescription(previousStatus)}' a '{user.GetStatusDescription()}'",
             Timestamp = DateTime.UtcNow
         };
     }
@@ -78,4 +78,4 @@ public class ChangeAccountStatusHandler : IRequestHandler<ChangeAccountStatusCom
             _ => "Desconocido"
         };
     }
-} 
+}

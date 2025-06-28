@@ -6,4 +6,4 @@ public enum NotificationChannel
     Sms = 2,
     Push = 3,
     InApp = 4
-} 
+}

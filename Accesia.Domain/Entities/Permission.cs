@@ -26,7 +26,7 @@ public class Permission : AuditableEntity
     public string? Conditions { get; set; }
     public DateTime? ValidFrom { get; set; }
     public DateTime? ValidUntil { get; set; }
-    
+
     // Navegación y relaciones
     public ICollection<RolePermission> RolePermissions { get; set; } = new List<RolePermission>();
 
@@ -37,8 +37,7 @@ public class Permission : AuditableEntity
             return false;
 
         if (!string.IsNullOrEmpty(Conditions))
-        {
-            try 
+            try
             {
                 var conditionDict = JsonSerializer.Deserialize<Dictionary<string, object>>(Conditions);
             }
@@ -46,7 +45,6 @@ public class Permission : AuditableEntity
             {
                 return false;
             }
-        }
 
         return true;
     }
@@ -83,10 +81,10 @@ public class Permission : AuditableEntity
     }
 
     public static Permission CreateCustomPermission(
-        string name, 
-        string description, 
-        ResourceType resource, 
-        ActionType action, 
+        string name,
+        string description,
+        ResourceType resource,
+        ActionType action,
         PermissionScope scope)
     {
         return new Permission

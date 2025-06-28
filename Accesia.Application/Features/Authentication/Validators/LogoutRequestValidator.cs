@@ -1,5 +1,5 @@
-using FluentValidation;
 using Accesia.Application.Features.Authentication.DTOs;
+using FluentValidation;
 
 namespace Accesia.Application.Features.Authentication.Validators;
 
@@ -15,4 +15,4 @@ public class LogoutRequestValidator : AbstractValidator<LogoutRequest>
             .MaximumLength(100)
             .WithMessage("El token de sesión no puede tener más de 100 caracteres");
     }
-} 
+}

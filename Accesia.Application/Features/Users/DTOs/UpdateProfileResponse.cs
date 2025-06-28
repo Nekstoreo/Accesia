@@ -6,4 +6,4 @@ public class UpdateProfileResponse
     public string Message { get; set; } = string.Empty;
     public UserProfileDto? Profile { get; set; }
     public Dictionary<string, string[]>? ValidationErrors { get; set; }
-} 
+}

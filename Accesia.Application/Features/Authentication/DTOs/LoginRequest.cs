@@ -12,6 +12,6 @@ public record LoginRequest
     public required string Password { get; init; }
 
     public bool RememberMe { get; init; } = false;
-    
+
     public string? DeviceName { get; init; }
-} 
+}

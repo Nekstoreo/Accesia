@@ -10,4 +10,4 @@ public enum NotificationType
     DeviceActivity = 6,
     EmailChange = 7,
     PasswordReset = 8
-} 
+}

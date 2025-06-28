@@ -1,10 +1,10 @@
+using Accesia.Application.Common.Exceptions;
+using Accesia.Application.Common.Interfaces;
+using Accesia.Application.Features.Users.DTOs;
+using Accesia.Domain.Entities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Accesia.Application.Common.Interfaces;
-using Accesia.Application.Common.Exceptions;
-using Accesia.Application.Features.Users.DTOs;
-using Accesia.Domain.Entities;
 
 namespace Accesia.Application.Features.Users.Commands.UpdateProfile;
 
@@ -37,54 +37,41 @@ public class UpdateProfileHandler : IRequestHandler<UpdateProfileCommand, Update
 
         // Verificar y auditar cambios
         if (user.FirstName != request.FirstName)
-        {
             auditLogs.Add(UserAuditLog.CreateProfileUpdate(
                 user.Id, "FirstName", user.FirstName, request.FirstName,
                 request.ClientIpAddress, request.UserAgent));
-        }
 
         if (user.LastName != request.LastName)
-        {
             auditLogs.Add(UserAuditLog.CreateProfileUpdate(
                 user.Id, "LastName", user.LastName, request.LastName,
                 request.ClientIpAddress, request.UserAgent));
-        }
 
         if (user.PhoneNumber != request.PhoneNumber)
-        {
             auditLogs.Add(UserAuditLog.CreateProfileUpdate(
                 user.Id, "PhoneNumber", user.PhoneNumber, request.PhoneNumber,
                 request.ClientIpAddress, request.UserAgent));
-        }
 
         if (user.PreferredLanguage != request.PreferredLanguage)
-        {
             auditLogs.Add(UserAuditLog.CreateProfileUpdate(
                 user.Id, "PreferredLanguage", user.PreferredLanguage, request.PreferredLanguage,
                 request.ClientIpAddress, request.UserAgent));
-        }
 
         if (user.TimeZone != request.TimeZone)
-        {
             auditLogs.Add(UserAuditLog.CreateProfileUpdate(
                 user.Id, "TimeZone", user.TimeZone, request.TimeZone,
                 request.ClientIpAddress, request.UserAgent));
-        }
 
         // Actualizar el perfil del usuario
         user.UpdateProfile(
-            firstName: request.FirstName,
-            lastName: request.LastName,
-            phoneNumber: request.PhoneNumber,
-            preferredLanguage: request.PreferredLanguage,
-            timeZone: request.TimeZone
+            request.FirstName,
+            request.LastName,
+            request.PhoneNumber,
+            request.PreferredLanguage,
+            request.TimeZone
         );
 
         // Agregar logs de auditoría
-        foreach (var auditLog in auditLogs)
-        {
-            _context.UserAuditLogs.Add(auditLog);
-        }
+        foreach (var auditLog in auditLogs) _context.UserAuditLogs.Add(auditLog);
 
         await _context.SaveChangesAsync(cancellationToken);
 
@@ -116,4 +103,4 @@ public class UpdateProfileHandler : IRequestHandler<UpdateProfileCommand, Update
             Profile = updatedProfile
         };
     }
-} 
+}

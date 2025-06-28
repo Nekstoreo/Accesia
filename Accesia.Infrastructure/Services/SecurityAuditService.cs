@@ -9,11 +9,10 @@ namespace Accesia.Infrastructure.Services;
 
 public class SecurityAuditService : ISecurityAuditService
 {
-    private readonly ApplicationDbContext _context;
-    private readonly ILogger<SecurityAuditService> _logger;
-    private readonly IEmailService _emailService;
-
     private static readonly HashSet<string> CriticalSeverities = new() { "Critical", "High" };
+    private readonly ApplicationDbContext _context;
+    private readonly IEmailService _emailService;
+    private readonly ILogger<SecurityAuditService> _logger;
 
     public SecurityAuditService(
         ApplicationDbContext context,
@@ -36,15 +35,11 @@ public class SecurityAuditService : ISecurityAuditService
 
         // Log estructurado para Serilog
         if (isSuccessful)
-        {
             _logger.LogInformation("Login exitoso - Usuario: {Email}, IP: {IpAddress}, Device: {DeviceType}",
                 email, ipAddress, deviceInfo.DeviceType);
-        }
         else
-        {
             _logger.LogWarning("Login fallido - Usuario: {Email}, IP: {IpAddress}, Razón: {FailureReason}",
                 email, ipAddress, failureReason);
-        }
     }
 
     public async Task LogPasswordChangeAsync(Guid userId, string ipAddress, string userAgent,
@@ -82,7 +77,8 @@ public class SecurityAuditService : ISecurityAuditService
 
         await LogSecurityEventInternalAsync(auditLog, cancellationToken);
 
-        _logger.LogWarning("Solicitud de eliminación de cuenta - Usuario: {UserId}, IP: {IpAddress}, Exitoso: {IsSuccessful}",
+        _logger.LogWarning(
+            "Solicitud de eliminación de cuenta - Usuario: {UserId}, IP: {IpAddress}, Exitoso: {IsSuccessful}",
             userId, ipAddress, isSuccessful);
     }
 
@@ -105,11 +101,13 @@ public class SecurityAuditService : ISecurityAuditService
         CancellationToken cancellationToken = default)
     {
         var auditLog = SecurityAuditLog.CreateSuspiciousActivity(
-            userId, ipAddress, userAgent, deviceInfo, endpoint, activityDescription, failureReason, locationInfo, additionalData);
+            userId, ipAddress, userAgent, deviceInfo, endpoint, activityDescription, failureReason, locationInfo,
+            additionalData);
 
         await LogSecurityEventInternalAsync(auditLog, cancellationToken);
 
-        _logger.LogError("Actividad sospechosa detectada - IP: {IpAddress}, Endpoint: {Endpoint}, Descripción: {ActivityDescription}",
+        _logger.LogError(
+            "Actividad sospechosa detectada - IP: {IpAddress}, Endpoint: {Endpoint}, Descripción: {ActivityDescription}",
             ipAddress, endpoint, activityDescription);
     }
 
@@ -126,7 +124,8 @@ public class SecurityAuditService : ISecurityAuditService
             ipAddress, endpoint, httpMethod);
     }
 
-    public async Task LogCustomSecurityEventAsync(SecurityAuditLog auditLog, CancellationToken cancellationToken = default)
+    public async Task LogCustomSecurityEventAsync(SecurityAuditLog auditLog,
+        CancellationToken cancellationToken = default)
     {
         await LogSecurityEventInternalAsync(auditLog, cancellationToken);
     }
@@ -220,19 +219,17 @@ public class SecurityAuditService : ISecurityAuditService
 
             // Enviar alerta si es un evento crítico
             if (CriticalSeverities.Contains(auditLog.Severity))
-            {
                 // Fire and forget - no queremos bloquear la operación principal
                 _ = Task.Run(async () => await AlertCriticalEventAsync(auditLog, cancellationToken), cancellationToken);
-            }
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error al guardar evento de seguridad: {EventType} - {Description}",
                 auditLog.EventType, auditLog.Description);
-            
+
             // En caso de error, al menos logueamos el evento
             _logger.LogWarning("Evento de seguridad no persistido - {EventType}: {Description} - IP: {IpAddress}",
                 auditLog.EventType, auditLog.Description, auditLog.IpAddress);
         }
     }
-} 
+}

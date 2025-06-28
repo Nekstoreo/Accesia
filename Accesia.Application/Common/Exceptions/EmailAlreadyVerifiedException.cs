@@ -1,17 +1,14 @@
-using System;
+namespace Accesia.Application.Common.Exceptions;
 
-namespace Accesia.Application.Common.Exceptions
+public class EmailAlreadyVerifiedException : Exception
 {
-    public class EmailAlreadyVerifiedException : Exception
+    public EmailAlreadyVerifiedException(string message, string? token, string? email = null)
+        : base(message)
     {
-        public string? Token { get; }
-        public string? Email { get; }
-
-        public EmailAlreadyVerifiedException(string message, string? token, string? email = null)
-            : base(message)
-        {
-            Token = token;
-            Email = email;
-        }
+        Token = token;
+        Email = email;
     }
+
+    public string? Token { get; }
+    public string? Email { get; }
 }

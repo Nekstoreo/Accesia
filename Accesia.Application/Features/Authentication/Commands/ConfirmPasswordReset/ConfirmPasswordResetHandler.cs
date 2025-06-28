@@ -1,20 +1,20 @@
-using MediatR;
-using Microsoft.Extensions.Logging;
-using Microsoft.EntityFrameworkCore;
-using Accesia.Application.Features.Authentication.DTOs;
-using Accesia.Application.Common.Interfaces;
 using Accesia.Application.Common.Exceptions;
-using Accesia.Domain.ValueObjects;
+using Accesia.Application.Common.Interfaces;
+using Accesia.Application.Features.Authentication.DTOs;
 using Accesia.Domain.Entities;
+using Accesia.Domain.ValueObjects;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Accesia.Application.Features.Authentication.Commands.ConfirmPasswordReset;
 
 public class ConfirmPasswordResetHandler : IRequestHandler<ConfirmPasswordResetCommand, ConfirmPasswordResetResponse>
 {
     private readonly IApplicationDbContext _context;
+    private readonly IEmailService _emailService;
     private readonly ILogger<ConfirmPasswordResetHandler> _logger;
     private readonly IPasswordHashService _passwordHashService;
-    private readonly IEmailService _emailService;
     private readonly ISessionService _sessionService;
 
     public ConfirmPasswordResetHandler(
@@ -31,7 +31,8 @@ public class ConfirmPasswordResetHandler : IRequestHandler<ConfirmPasswordResetC
         _sessionService = sessionService;
     }
 
-    public async Task<ConfirmPasswordResetResponse> Handle(ConfirmPasswordResetCommand request, CancellationToken cancellationToken)
+    public async Task<ConfirmPasswordResetResponse> Handle(ConfirmPasswordResetCommand request,
+        CancellationToken cancellationToken)
     {
         _logger.LogInformation("Confirmando restablecimiento de contraseña con token {Token}", request.Token);
 
@@ -88,11 +89,12 @@ public class ConfirmPasswordResetHandler : IRequestHandler<ConfirmPasswordResetC
                 try
                 {
                     await _emailService.SendWelcomeEmailAsync(
-                        user.Email.Value, 
-                        user.FirstName, 
+                        user.Email.Value,
+                        user.FirstName,
                         CancellationToken.None);
-                    
-                    _logger.LogInformation("Email de confirmación de cambio de contraseña enviado a {Email}", user.Email.Value);
+
+                    _logger.LogInformation("Email de confirmación de cambio de contraseña enviado a {Email}",
+                        user.Email.Value);
                 }
                 catch (Exception ex)
                 {
@@ -112,4 +114,4 @@ public class ConfirmPasswordResetHandler : IRequestHandler<ConfirmPasswordResetC
             throw;
         }
     }
-} 
+}

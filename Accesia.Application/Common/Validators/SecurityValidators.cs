@@ -6,7 +6,8 @@ namespace Accesia.Application.Common.Validators;
 public static class SecurityValidators
 {
     // Patrones para detectar intentos de XSS
-    private static readonly Regex[] XssPatterns = {
+    private static readonly Regex[] XssPatterns =
+    {
         new(@"<script[^>]*>.*?</script>", RegexOptions.IgnoreCase | RegexOptions.Singleline),
         new(@"javascript:", RegexOptions.IgnoreCase),
         new(@"vbscript:", RegexOptions.IgnoreCase),
@@ -21,7 +22,8 @@ public static class SecurityValidators
     };
 
     // Patrones para detectar intentos de SQL Injection
-    private static readonly Regex[] SqlInjectionPatterns = {
+    private static readonly Regex[] SqlInjectionPatterns =
+    {
         new(@"(\b(select|insert|update|delete|drop|create|alter|exec|execute|sp_|xp_)\b)", RegexOptions.IgnoreCase),
         new(@"(\bunion\b.*\bselect\b)", RegexOptions.IgnoreCase),
         new(@"(\bor\b\s+\d+\s*=\s*\d+)", RegexOptions.IgnoreCase),
@@ -35,12 +37,14 @@ public static class SecurityValidators
     };
 
     // Caracteres peligrosos comunes
-    private static readonly char[] DangerousChars = {
+    private static readonly char[] DangerousChars =
+    {
         '<', '>', '"', '\'', '&', '\0', '\r', '\n'
     };
 
     // Patrones para detectar intentos de Path Traversal
-    private static readonly Regex[] PathTraversalPatterns = {
+    private static readonly Regex[] PathTraversalPatterns =
+    {
         new(@"\.\./", RegexOptions.IgnoreCase),
         new(@"\.\.\\", RegexOptions.IgnoreCase),
         new(@"%2e%2e%2f", RegexOptions.IgnoreCase),
@@ -97,7 +101,7 @@ public static class SecurityValidators
             }).WithMessage("El contenido contiene caracteres potencialmente peligrosos");
     }
 
-    public static IRuleBuilder<T, string> SafeHtml<T>(this IRuleBuilder<T, string> ruleBuilder, 
+    public static IRuleBuilder<T, string> SafeHtml<T>(this IRuleBuilder<T, string> ruleBuilder,
         HashSet<string>? allowedTags = null)
     {
         allowedTags ??= new HashSet<string> { "b", "i", "em", "strong", "p", "br", "ul", "ol", "li" };
@@ -114,24 +118,23 @@ public static class SecurityValidators
             foreach (Match match in matches)
             {
                 var tagName = match.Groups[2].Value.ToLowerInvariant();
-                if (!allowedTags.Contains(tagName))
-                {
-                    return false;
-                }
+                if (!allowedTags.Contains(tagName)) return false;
             }
 
             // Verificar que no contenga scripts peligrosos
             return !XssPatterns.Any(pattern => pattern.IsMatch(value));
-
         }).WithMessage($"El HTML contiene tags no permitidos. Tags permitidos: {string.Join(", ", allowedTags)}");
     }
 
     public static IRuleBuilder<T, string> ValidFileName<T>(this IRuleBuilder<T, string> ruleBuilder)
     {
         var invalidChars = Path.GetInvalidFileNameChars();
-        var reservedNames = new[] { "CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4", "COM5", 
-                                   "COM6", "COM7", "COM8", "COM9", "LPT1", "LPT2", "LPT3", "LPT4", 
-                                   "LPT5", "LPT6", "LPT7", "LPT8", "LPT9" };
+        var reservedNames = new[]
+        {
+            "CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4", "COM5",
+            "COM6", "COM7", "COM8", "COM9", "LPT1", "LPT2", "LPT3", "LPT4",
+            "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"
+        };
 
         return ruleBuilder.Must(value =>
         {
@@ -152,11 +155,10 @@ public static class SecurityValidators
                 return false;
 
             return true;
-
         }).WithMessage("El nombre de archivo contiene caracteres inválidos o es un nombre reservado");
     }
 
-    public static IRuleBuilder<T, string> ValidUrl<T>(this IRuleBuilder<T, string> ruleBuilder, 
+    public static IRuleBuilder<T, string> ValidUrl<T>(this IRuleBuilder<T, string> ruleBuilder,
         bool allowedLocalhost = false)
     {
         return ruleBuilder.Must(value =>
@@ -172,11 +174,11 @@ public static class SecurityValidators
                 return false;
 
             // Verificar si localhost está permitido
-            if (!allowedLocalhost && (uri.Host == "localhost" || uri.Host == "127.0.0.1" || uri.Host.StartsWith("192.168.")))
+            if (!allowedLocalhost &&
+                (uri.Host == "localhost" || uri.Host == "127.0.0.1" || uri.Host.StartsWith("192.168.")))
                 return false;
 
             return true;
-
         }).WithMessage("La URL no es válida o no está permitida");
     }
 
@@ -201,13 +203,12 @@ public static class SecurityValidators
             if (string.IsNullOrEmpty(value))
                 return true;
 
-            return !maliciousPatterns.Any(pattern => 
+            return !maliciousPatterns.Any(pattern =>
                 Regex.IsMatch(value, pattern, RegexOptions.IgnoreCase));
-
         }).WithMessage("El contenido contiene patrones de código potencialmente maliciosos");
     }
 
-    public static IRuleBuilder<T, string> SafeLength<T>(this IRuleBuilder<T, string> ruleBuilder, 
+    public static IRuleBuilder<T, string> SafeLength<T>(this IRuleBuilder<T, string> ruleBuilder,
         int maxLength = 10000)
     {
         return ruleBuilder
@@ -224,8 +225,8 @@ public static class SecurityValidators
                 return true;
 
             return value.All(c => char.IsLetterOrDigit(c) || allowedSpecialChars.Contains(c));
-
-        }).WithMessage($"Solo se permiten caracteres alfanuméricos y estos caracteres especiales: {allowedSpecialChars}");
+        }).WithMessage(
+            $"Solo se permiten caracteres alfanuméricos y estos caracteres especiales: {allowedSpecialChars}");
     }
 }
 
@@ -261,4 +262,4 @@ public static class FieldSecurityValidators
             .NoMaliciousPatterns()
             .SafeLength(5000);
     }
-} 
+}

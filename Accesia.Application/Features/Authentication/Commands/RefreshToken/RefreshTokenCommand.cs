@@ -1,5 +1,5 @@
-using MediatR;
 using Accesia.Application.Features.Authentication.DTOs;
+using MediatR;
 
 namespace Accesia.Application.Features.Authentication.Commands.RefreshToken;
 
@@ -18,4 +18,4 @@ public record RefreshTokenCommand : IRequest<RefreshTokenResponse>
             UserAgent = userAgent
         };
     }
-} 
+}

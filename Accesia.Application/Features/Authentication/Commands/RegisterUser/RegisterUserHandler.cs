@@ -1,20 +1,20 @@
-using MediatR;
-using Microsoft.Extensions.Logging;
-using Microsoft.EntityFrameworkCore;
-using Accesia.Application.Features.Authentication.DTOs;
-using Accesia.Application.Common.Interfaces;
 using Accesia.Application.Common.Exceptions;
-using Accesia.Domain.ValueObjects;
+using Accesia.Application.Common.Interfaces;
+using Accesia.Application.Features.Authentication.DTOs;
 using Accesia.Domain.Entities;
+using Accesia.Domain.ValueObjects;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Accesia.Application.Features.Authentication.Commands.RegisterUser;
 
 public class RegisterUserHandler : IRequestHandler<RegisterUserCommand, RegisterUserResponse>
 {
     private readonly IApplicationDbContext _context;
+    private readonly IEmailService _emailService;
     private readonly ILogger<RegisterUserHandler> _logger;
     private readonly IPasswordHashService _passwordHashService;
-    private readonly IEmailService _emailService;
     private readonly IRateLimitService _rateLimitService;
     private readonly ITokenService _tokenService;
 
@@ -57,7 +57,7 @@ public class RegisterUserHandler : IRequestHandler<RegisterUserCommand, Register
 
         // 6. Crear entidad User con estado pendiente de verificación
         var user = User.CreateNewUser(email, passwordHash, request.FirstName, request.LastName);
-        
+
         // Configurar propiedades adicionales
         user.PhoneNumber = request.PhoneNumber;
         user.PreferredLanguage = request.PreferredLanguage;
@@ -72,12 +72,12 @@ public class RegisterUserHandler : IRequestHandler<RegisterUserCommand, Register
             _context.Users.Add(user);
             await _context.SaveChangesAsync(cancellationToken);
 
-            _logger.LogInformation("Usuario creado exitosamente con ID {UserId} para email {Email}", 
+            _logger.LogInformation("Usuario creado exitosamente con ID {UserId} para email {Email}",
                 user.Id, request.Email);
 
             // 8. Registrar el intento en rate limiting
             await _rateLimitService.RecordActionAttemptAsync(
-                request.ClientIpAddress ?? "unknown", 
+                request.ClientIpAddress ?? "unknown",
                 "user_registration");
 
             // 9. Enviar email de verificación de forma asíncrona
@@ -86,10 +86,10 @@ public class RegisterUserHandler : IRequestHandler<RegisterUserCommand, Register
                 try
                 {
                     await _emailService.SendEmailVerificationAsync(
-                        user.Email.Value, 
-                        verificationToken, 
+                        user.Email.Value,
+                        verificationToken,
                         CancellationToken.None);
-                    
+
                     _logger.LogInformation("Email de verificación enviado a {Email}", request.Email);
                 }
                 catch (Exception ex)
@@ -121,7 +121,7 @@ public class RegisterUserHandler : IRequestHandler<RegisterUserCommand, Register
             return; // Si no tenemos IP, continuamos (en desarrollo puede pasar)
 
         var canRegister = await _rateLimitService.CanPerformActionAsync(ipAddress, "user_registration");
-        
+
         if (!canRegister)
         {
             var cooldown = await _rateLimitService.GetRemainingCooldownAsync(ipAddress, "user_registration");

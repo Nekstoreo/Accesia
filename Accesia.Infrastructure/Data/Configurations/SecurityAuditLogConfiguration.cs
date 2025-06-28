@@ -1,8 +1,8 @@
+using System.Text.Json;
 using Accesia.Domain.Entities;
 using Accesia.Domain.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using System.Text.Json;
 
 namespace Accesia.Infrastructure.Data.Configurations;
 
@@ -78,8 +78,12 @@ public class SecurityAuditLogConfiguration : IEntityTypeConfiguration<SecurityAu
         // Configuración de LocationInfo como JSON
         builder.Property(sal => sal.LocationInfo)
             .HasConversion(
-                locationInfo => locationInfo == null ? null : JsonSerializer.Serialize(locationInfo, (JsonSerializerOptions?)null),
-                json => json == null ? null : JsonSerializer.Deserialize<LocationInfo>(json, (JsonSerializerOptions?)null))
+                locationInfo => locationInfo == null
+                    ? null
+                    : JsonSerializer.Serialize(locationInfo, (JsonSerializerOptions?)null),
+                json => json == null
+                    ? null
+                    : JsonSerializer.Deserialize<LocationInfo>(json, (JsonSerializerOptions?)null))
             .HasColumnType("text");
 
         // Configuración de AdditionalData como JSON
@@ -87,7 +91,8 @@ public class SecurityAuditLogConfiguration : IEntityTypeConfiguration<SecurityAu
             .IsRequired()
             .HasConversion(
                 dict => JsonSerializer.Serialize(dict, (JsonSerializerOptions?)null),
-                json => JsonSerializer.Deserialize<Dictionary<string, object>>(json, (JsonSerializerOptions?)null) ?? new Dictionary<string, object>())
+                json => JsonSerializer.Deserialize<Dictionary<string, object>>(json, (JsonSerializerOptions?)null) ??
+                        new Dictionary<string, object>())
             .HasColumnType("text");
 
         // Configurar relación con User
@@ -128,4 +133,4 @@ public class SecurityAuditLogConfiguration : IEntityTypeConfiguration<SecurityAu
         builder.HasIndex(sal => new { sal.Severity, sal.OccurredAt })
             .HasDatabaseName("IX_SecurityAuditLogs_Severity_OccurredAt");
     }
-} 
+}

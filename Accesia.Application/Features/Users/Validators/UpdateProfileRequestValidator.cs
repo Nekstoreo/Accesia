@@ -1,5 +1,5 @@
-using FluentValidation;
 using Accesia.Application.Features.Users.DTOs;
+using FluentValidation;
 
 namespace Accesia.Application.Features.Users.Validators;
 
@@ -71,4 +71,4 @@ public class UpdateProfileRequestValidator : AbstractValidator<UpdateProfileRequ
             return commonTimeZones.Contains(timeZone);
         }
     }
-} 
+}

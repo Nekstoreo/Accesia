@@ -1,6 +1,6 @@
-using MediatR;
-using Accesia.Domain.Enums;
 using Accesia.Application.Features.Users.DTOs;
+using Accesia.Domain.Enums;
+using MediatR;
 
 namespace Accesia.Application.Features.Users.Commands.UpdateUserSettings;
 
@@ -45,4 +45,4 @@ public record SecuritySettings(
     bool? RequirePasswordChangeOn2FADisable = null,
     bool? LogoutOnPasswordChange = null,
     int? SessionTimeoutMinutes = null
-); 
+);

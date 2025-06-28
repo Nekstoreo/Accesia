@@ -1,18 +1,15 @@
+using System.Security.Cryptography;
+using System.Text;
 using Accesia.Domain.Enums;
 
 namespace Accesia.Domain.ValueObjects;
 
 public class DeviceInfo
 {
-    public string UserAgent { get; set; } = string.Empty;
-    public DeviceType DeviceType { get; set; }
-    public string Browser { get; set; } = string.Empty;
-    public string BrowserVersion { get; set; } = string.Empty;
-    public string OperatingSystem { get; set; } = string.Empty;
-    public string DeviceFingerprint { get; set; } = string.Empty;
-
     // Constructor sin parámetros para EF Core
-    public DeviceInfo() { }
+    public DeviceInfo()
+    {
+    }
 
     public DeviceInfo(
         string userAgent,
@@ -29,6 +26,13 @@ public class DeviceInfo
         OperatingSystem = operatingSystem ?? "Unknown";
         DeviceFingerprint = deviceFingerprint ?? throw new ArgumentNullException(nameof(deviceFingerprint));
     }
+
+    public string UserAgent { get; set; } = string.Empty;
+    public DeviceType DeviceType { get; set; }
+    public string Browser { get; set; } = string.Empty;
+    public string BrowserVersion { get; set; } = string.Empty;
+    public string OperatingSystem { get; set; } = string.Empty;
+    public string DeviceFingerprint { get; set; } = string.Empty;
 
     public static DeviceInfo CreateFromUserAgent(string userAgent)
     {
@@ -54,7 +58,7 @@ public class DeviceInfo
             return DeviceType.Tablet;
         if (ua.Contains("bot") || ua.Contains("crawler") || ua.Contains("spider"))
             return DeviceType.Bot;
-        
+
         return DeviceType.Desktop;
     }
 
@@ -66,7 +70,7 @@ public class DeviceInfo
         if (ua.Contains("safari")) return "Safari";
         if (ua.Contains("edge")) return "Edge";
         if (ua.Contains("opera")) return "Opera";
-        
+
         return "Unknown";
     }
 
@@ -84,15 +88,15 @@ public class DeviceInfo
         if (ua.Contains("linux")) return "Linux";
         if (ua.Contains("android")) return "Android";
         if (ua.Contains("ios")) return "iOS";
-        
+
         return "Unknown";
     }
 
     private static string GenerateFingerprint(string userAgent)
     {
         // Genera un hash del user agent para identificación
-        using var sha256 = System.Security.Cryptography.SHA256.Create();
-        var hash = sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(userAgent));
+        using var sha256 = SHA256.Create();
+        var hash = sha256.ComputeHash(Encoding.UTF8.GetBytes(userAgent));
         return Convert.ToHexString(hash)[..16]; // Primeros 16 caracteres
     }
 }

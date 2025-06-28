@@ -6,4 +6,4 @@ public class ConfirmAccountDeletionResponse
     public string Message { get; set; } = string.Empty;
     public DateTime? DeletedAt { get; set; }
     public DateTime? PermanentDeletionDate { get; set; }
-} 
+}

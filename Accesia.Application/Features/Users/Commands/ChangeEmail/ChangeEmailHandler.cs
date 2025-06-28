@@ -1,21 +1,21 @@
-using MediatR;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Accesia.Application.Common.Interfaces;
 using Accesia.Application.Common.Exceptions;
+using Accesia.Application.Common.Interfaces;
 using Accesia.Application.Features.Users.DTOs;
 using Accesia.Domain.Entities;
 using Accesia.Domain.ValueObjects;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Accesia.Application.Features.Users.Commands.ChangeEmail;
 
 public class ChangeEmailHandler : IRequestHandler<ChangeEmailCommand, ChangeEmailResponse>
 {
     private readonly IApplicationDbContext _context;
-    private readonly IPasswordHashService _passwordHashService;
-    private readonly ITokenService _tokenService;
     private readonly IEmailService _emailService;
     private readonly ILogger<ChangeEmailHandler> _logger;
+    private readonly IPasswordHashService _passwordHashService;
+    private readonly ITokenService _tokenService;
 
     public ChangeEmailHandler(
         IApplicationDbContext context,
@@ -33,8 +33,8 @@ public class ChangeEmailHandler : IRequestHandler<ChangeEmailCommand, ChangeEmai
 
     public async Task<ChangeEmailResponse> Handle(ChangeEmailCommand request, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Iniciando cambio de email para usuario {UserId} a {NewEmail}", 
-                              request.UserId, request.NewEmail);
+        _logger.LogInformation("Iniciando cambio de email para usuario {UserId} a {NewEmail}",
+            request.UserId, request.NewEmail);
 
         // 1. Obtener el usuario
         var user = await _context.Users
@@ -56,9 +56,7 @@ public class ChangeEmailHandler : IRequestHandler<ChangeEmailCommand, ChangeEmai
         // 3. Validar que el nuevo email sea diferente
         var newEmail = new Email(request.NewEmail);
         if (newEmail.Value == user.Email.Value)
-        {
             throw new InvalidOperationException("El nuevo email debe ser diferente al actual.");
-        }
 
         // 4. Verificar que el nuevo email no esté en uso
         var emailExists = await _context.Users
@@ -90,15 +88,16 @@ public class ChangeEmailHandler : IRequestHandler<ChangeEmailCommand, ChangeEmai
         await _emailService.SendEmailChangeVerificationAsync(
             request.NewEmail, user.FirstName, verificationToken);
 
-        _logger.LogInformation("Email de verificación enviado a {NewEmail} para usuario {UserId}", 
-                              request.NewEmail, request.UserId);
+        _logger.LogInformation("Email de verificación enviado a {NewEmail} para usuario {UserId}",
+            request.NewEmail, request.UserId);
 
         return new ChangeEmailResponse
         {
             Success = true,
-            Message = "Se ha enviado un email de verificación a la nueva dirección. Verifica tu email para completar el cambio.",
+            Message =
+                "Se ha enviado un email de verificación a la nueva dirección. Verifica tu email para completar el cambio.",
             NewEmail = request.NewEmail,
             RequiresVerification = true
         };
     }
-} 
+}

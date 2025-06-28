@@ -1,6 +1,6 @@
-using FluentValidation;
 using Accesia.Application.Features.Authentication.DTOs;
 using Accesia.Domain.ValueObjects;
+using FluentValidation;
 
 namespace Accesia.Application.Features.Authentication.Validators;
 

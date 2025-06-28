@@ -4,16 +4,16 @@ namespace Accesia.Application.Common.Interfaces;
 
 public interface IAdvancedRateLimitService
 {
-    Task<bool> CanPerformActionAsync(string actionKey, string ipAddress, Guid? userId = null, 
+    Task<bool> CanPerformActionAsync(string actionKey, string ipAddress, Guid? userId = null,
         string? endpoint = null, CancellationToken cancellationToken = default);
 
-    Task RecordActionAttemptAsync(string actionKey, string ipAddress, Guid? userId = null, 
+    Task RecordActionAttemptAsync(string actionKey, string ipAddress, Guid? userId = null,
         string? endpoint = null, CancellationToken cancellationToken = default);
 
-    Task<TimeSpan> GetRemainingCooldownAsync(string actionKey, string ipAddress, Guid? userId = null, 
+    Task<TimeSpan> GetRemainingCooldownAsync(string actionKey, string ipAddress, Guid? userId = null,
         string? endpoint = null, CancellationToken cancellationToken = default);
 
-    Task<RateLimitStatus> GetRateLimitStatusAsync(string actionKey, string ipAddress, Guid? userId = null, 
+    Task<RateLimitStatus> GetRateLimitStatusAsync(string actionKey, string ipAddress, Guid? userId = null,
         string? endpoint = null, CancellationToken cancellationToken = default);
 
     Task BlockKeyAsync(string key, TimeSpan duration, string reason, CancellationToken cancellationToken = default);
@@ -22,10 +22,10 @@ public interface IAdvancedRateLimitService
 
     Task<bool> IsBlockedAsync(string key, CancellationToken cancellationToken = default);
 
-    Task<Dictionary<string, int>> GetViolationStatisticsAsync(DateTime fromDate, DateTime toDate, 
+    Task<Dictionary<string, int>> GetViolationStatisticsAsync(DateTime fromDate, DateTime toDate,
         CancellationToken cancellationToken = default);
 
-    Task ResetLimitAsync(string actionKey, string ipAddress, Guid? userId = null, 
+    Task ResetLimitAsync(string actionKey, string ipAddress, Guid? userId = null,
         string? endpoint = null, CancellationToken cancellationToken = default);
 
     Task ConfigurePolicyAsync(string actionKey, RateLimitPolicy policy, CancellationToken cancellationToken = default);
@@ -45,4 +45,4 @@ public class RateLimitStatus
     public bool IsBlocked { get; set; }
     public string? BlockReason { get; set; }
     public Dictionary<string, object> AdditionalInfo { get; set; } = new();
-} 
+}

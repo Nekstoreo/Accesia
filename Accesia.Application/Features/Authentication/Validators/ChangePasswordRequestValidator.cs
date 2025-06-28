@@ -1,5 +1,5 @@
-using FluentValidation;
 using Accesia.Application.Features.Authentication.DTOs;
+using FluentValidation;
 
 namespace Accesia.Application.Features.Authentication.Validators;
 
@@ -17,7 +17,8 @@ public class ChangePasswordRequestValidator : AbstractValidator<ChangePasswordRe
             .MinimumLength(8)
             .WithMessage("La contraseña debe tener al menos 8 caracteres")
             .Matches(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]")
-            .WithMessage("La contraseña debe contener al menos una letra minúscula, una mayúscula, un número y un carácter especial")
+            .WithMessage(
+                "La contraseña debe contener al menos una letra minúscula, una mayúscula, un número y un carácter especial")
             .NotEqual(x => x.CurrentPassword)
             .WithMessage("La nueva contraseña debe ser diferente a la contraseña actual");
 
@@ -27,4 +28,4 @@ public class ChangePasswordRequestValidator : AbstractValidator<ChangePasswordRe
             .Equal(x => x.NewPassword)
             .WithMessage("Las contraseñas no coinciden");
     }
-} 
+}

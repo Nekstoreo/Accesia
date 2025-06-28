@@ -1,5 +1,5 @@
-using FluentValidation;
 using Accesia.Application.Features.Authentication.DTOs;
+using FluentValidation;
 
 namespace Accesia.Application.Features.Authentication.Validators;
 
@@ -15,4 +15,4 @@ public class RequestPasswordResetRequestValidator : AbstractValidator<RequestPas
             .MaximumLength(256)
             .WithMessage("El email no puede exceder 256 caracteres");
     }
-} 
+}

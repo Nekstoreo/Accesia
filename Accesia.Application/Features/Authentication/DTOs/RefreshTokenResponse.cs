@@ -7,4 +7,4 @@ public record RefreshTokenResponse
     public required string TokenType { get; init; } = "Bearer";
     public required int ExpiresIn { get; init; }
     public required DateTime ExpiresAt { get; init; }
-} 
+}

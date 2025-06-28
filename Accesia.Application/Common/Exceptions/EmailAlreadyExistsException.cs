@@ -2,9 +2,7 @@ namespace Accesia.Application.Common.Exceptions;
 
 public class EmailAlreadyExistsException : Exception
 {
-    public string Email { get; }
-
-    public EmailAlreadyExistsException(string email) 
+    public EmailAlreadyExistsException(string email)
         : base($"Ya existe una cuenta registrada con el email {email}")
     {
         Email = email;
@@ -14,4 +12,6 @@ public class EmailAlreadyExistsException : Exception
     {
         Email = email;
     }
-} 
+
+    public string Email { get; }
+}

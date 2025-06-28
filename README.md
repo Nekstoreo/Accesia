@@ -1,7 +1,9 @@
 # Accesia
+
 ## Sistema de Autenticación y Gestión de Usuarios Empresarial
 
-> **API RESTful robusta construida con .NET 9.0** siguiendo principios de **Clean Architecture** para aplicaciones empresariales que requieren autenticación segura, gestión de usuarios avanzada y control de acceso granular.
+> **API RESTful robusta construida con .NET 9.0** siguiendo principios de **Clean Architecture** para aplicaciones
+> empresariales que requieren autenticación segura, gestión de usuarios avanzada y control de acceso granular.
 
 ---
 
@@ -64,6 +66,7 @@ graph TB
 ```
 
 ### **Principios Arquitectónicos**
+
 - **Clean Architecture** con separación clara de responsabilidades
 - **Domain-Driven Design** con agregados ricos y eventos de dominio
 - **CQRS** para operaciones complejas de lectura/escritura
@@ -75,47 +78,53 @@ graph TB
 
 ## 🛠️ Stack Tecnológico
 
-| Categoría | Tecnología | Versión | Propósito |
-|-----------|------------|---------|-----------|
-| **Framework** | .NET | 9.0 | Runtime principal |
-| **Base de Datos** | PostgreSQL | 16 | Almacenamiento persistente |
-| **ORM** | Entity Framework Core | 9.0 | Mapeo objeto-relacional |
-| **Autenticación** | JWT Bearer | - | Tokens de acceso |
-| **Validación** | FluentValidation | 11.9.0 | Validación de modelos |
-| **Logging** | Serilog | 4.0.1 | Sistema de logs estructurado |
-| **Testing** | xUnit + Moq | - | Pruebas unitarias e integración |
-| **Cache** | Redis | 7.0+ | Caching distribuido |
-| **Contenedores** | Docker | 28.0+ | PostgreSQL containerizado |
+| Categoría         | Tecnología            | Versión | Propósito                       |
+|-------------------|-----------------------|---------|---------------------------------|
+| **Framework**     | .NET                  | 9.0     | Runtime principal               |
+| **Base de Datos** | PostgreSQL            | 16      | Almacenamiento persistente      |
+| **ORM**           | Entity Framework Core | 9.0     | Mapeo objeto-relacional         |
+| **Autenticación** | JWT Bearer            | -       | Tokens de acceso                |
+| **Validación**    | FluentValidation      | 11.9.0  | Validación de modelos           |
+| **Logging**       | Serilog               | 4.0.1   | Sistema de logs estructurado    |
+| **Testing**       | xUnit + Moq           | -       | Pruebas unitarias e integración |
+| **Cache**         | Redis                 | 7.0+    | Caching distribuido             |
+| **Contenedores**  | Docker                | 28.0+   | PostgreSQL containerizado       |
 
 ---
 
 ## ⚙️ Instalación y Configuración
 
 ### **Prerrequisitos**
+
 - [.NET 9.0 SDK](https://dotnet.microsoft.com/download)
-- **Base de datos**: [PostgreSQL 16+](https://www.postgresql.org/download/) (local) o [Docker](https://docs.docker.com/compose/install/) (recomendado)
+- **Base de datos**: [PostgreSQL 16+](https://www.postgresql.org/download/) (local)
+  o [Docker](https://docs.docker.com/compose/install/) (recomendado)
 
 ### 🚀 **Inicio Rápido**
 
 1. **Clonar el repositorio**
+
 ```bash
 git clone https://github.com/Nekstoreo/Accesia.git
 cd Accesia
 ```
 
 2. **Levantar PostgreSQL con Docker**
+
 ```bash
 # Solo levantar la base de datos
 docker-compose up postgres -d
 ```
 
 3. **Configurar variables de entorno**
+
 ```bash
 # Renombrar el archivo de configuración ejemplo
 cp Accesia.API/appsettings.Development.example.json Accesia.API/appsettings.Development.json
 ```
 
 4. **Configurar base de datos**
+
 ```json
 {
   "ConnectionStrings": {
@@ -131,11 +140,13 @@ cp Accesia.API/appsettings.Development.example.json Accesia.API/appsettings.Deve
 ```
 
 5. **Ejecutar migraciones**
+
 ```bash
 dotnet ef database update --project Accesia.API
 ```
 
 6. **Iniciar la API**
+
 ```bash
 cd Accesia.API
 dotnet run
@@ -159,6 +170,7 @@ Si prefieres instalar PostgreSQL localmente:
 ### **Endpoints Implementados**
 
 #### **Autenticación**
+
 ```http
 POST /api/auth/register          # Registro de usuario
 POST /api/auth/verify-email      # Verificar email
@@ -170,12 +182,14 @@ POST /api/auth/logout-all        # Cerrar todas las sesiones
 ```
 
 #### **Gestión de Usuario**
+
 ```http
 GET  /api/users/profile          # Obtener perfil
 PUT  /api/users/profile          # Actualizar perfil
 ```
 
 #### **Health Checks**
+
 ```http
 GET  /api/health                 # Estado de la aplicación
 ```
@@ -183,6 +197,7 @@ GET  /api/health                 # Estado de la aplicación
 ### **Formato de Respuestas**
 
 Todas las respuestas siguen un formato consistente:
+
 ```json
 {
   "success": true,
@@ -195,6 +210,7 @@ Todas las respuestas siguen un formato consistente:
 ```
 
 ### **Códigos de Estado**
+
 - `200` - Operación exitosa
 - `400` - Error de validación o datos incorrectos
 - `401` - No autenticado
@@ -223,6 +239,7 @@ dotnet test --filter "FullyQualifiedName~LoginUser"
 ```
 
 ### **Estructura de Pruebas**
+
 - **Pruebas Unitarias**: Lógica de negocio y casos de uso
 - **Pruebas de Integración**: Endpoints completos con base de datos
 - **Pruebas de Validación**: FluentValidation rules
@@ -233,6 +250,7 @@ dotnet test --filter "FullyQualifiedName~LoginUser"
 ## 🔒 **Seguridad**
 
 ### **Características Implementadas**
+
 - ✅ **Hashing seguro** con BCrypt y salt único
 - ✅ **Rate limiting** por IP, usuario y endpoint
 - ✅ **Validación exhaustiva** de entrada con sanitización
@@ -242,6 +260,7 @@ dotnet test --filter "FullyQualifiedName~LoginUser"
 - ✅ **Protección CSRF** con tokens únicos
 
 ### **Próximas Características**
+
 - 🔄 **MFA** (TOTP, SMS, Email, códigos de respaldo)
 - 🔄 **OAuth 2.0** (Google, Microsoft, GitHub)
 - 🔄 **Gestión de dispositivos** con fingerprinting
@@ -256,18 +275,21 @@ dotnet test --filter "FullyQualifiedName~LoginUser"
 ## 📊 **Monitoreo y Observabilidad**
 
 ### **Logging Estructurado**
+
 - **Serilog** con múltiples sinks (consola, archivo, base de datos)
 - **Correlation IDs** para rastreo de requests
 - **Contexto enriquecido** (usuario, sesión, dispositivo)
 - **Niveles apropiados** (Debug, Info, Warning, Error, Fatal)
 
 ### **Métricas y Health Checks**
+
 - **Health checks** para base de datos y servicios críticos
 - **Métricas de aplicación** (requests/seg, tiempo respuesta, errores)
 - **Métricas de negocio** (registros, logins, uso de características)
 - **Alertas automáticas** para eventos críticos
 
 ### **Auditoría**
+
 - **Eventos de seguridad** completos
 - **Intentos de autenticación** exitosos y fallidos
 - **Cambios de configuración** y perfil
@@ -284,6 +306,7 @@ dotnet test --filter "FullyQualifiedName~LoginUser"
 5. **Abre** un Pull Request
 
 ### **Convenciones de Commits**
+
 - `feat:` nueva funcionalidad
 - `fix:` corrección de bug
 - `docs:` cambios en documentación
@@ -293,6 +316,7 @@ dotnet test --filter "FullyQualifiedName~LoginUser"
 - `chore:` tareas de mantenimiento
 
 ### **Estándares de Código**
+
 - **Clean Code** principles
 - **SOLID** design patterns
 - **Cobertura de pruebas** mínima del 80%
@@ -309,7 +333,8 @@ Este proyecto está bajo la **Licencia MIT**. Ver [LICENSE](LICENSE) para más d
 
 ## 👨‍💻 **Autor**
 
-**Néstor Gutiérrez**  
+**Néstor Gutiérrez**
+
 - 🐙 GitHub: [@Nekstoreo](https://github.com/Nekstoreo)
 - 📧 Email: nestorg456k@outlook.com
 - 💼 LinkedIn: [Perfil profesional](https://linkedin.com/in/nestorg456k)
@@ -318,15 +343,16 @@ Este proyecto está bajo la **Licencia MIT**. Ver [LICENSE](LICENSE) para más d
 
 <div align="center">
 
-### **¿Te gusta Accesia?** ⭐ 
+### **¿Te gusta Accesia?** ⭐
 
 Dale una estrella al repositorio para apoyar el desarrollo
 
-### **¿Necesitas ayuda?** 💬 
+### **¿Necesitas ayuda?** 💬
 
-Abre un [issue](https://github.com/Nekstoreo/Accesia/issues) o revisa la [documentación](https://github.com/Nekstoreo/Accesia/wiki)
+Abre un [issue](https://github.com/Nekstoreo/Accesia/issues) o revisa
+la [documentación](https://github.com/Nekstoreo/Accesia/wiki)
 
-### **¿Quieres contribuir?** 🛠️ 
+### **¿Quieres contribuir?** 🛠️
 
 Lee nuestra [guía de contribución](#-contribución) y únete al desarrollo
 

@@ -1,6 +1,6 @@
 using Accesia.Domain.Common;
-using Accesia.Domain.ValueObjects;
 using Accesia.Domain.Enums;
+using Accesia.Domain.ValueObjects;
 
 namespace Accesia.Domain.Entities;
 
@@ -98,25 +98,25 @@ public class Session : AuditableEntity
     // Validaciones
     public bool IsActive()
     {
-        return Status == SessionStatus.Active && 
+        return Status == SessionStatus.Active &&
                DateTime.UtcNow < ExpiresAt;
     }
 
     public bool IsExpired()
     {
-        return Status == SessionStatus.Expired || 
+        return Status == SessionStatus.Expired ||
                DateTime.UtcNow >= ExpiresAt;
     }
 
     public bool CanBeRefreshed()
     {
-        return Status == SessionStatus.Active && 
+        return Status == SessionStatus.Active &&
                DateTime.UtcNow < RefreshTokenExpiresAt;
     }
 
     public bool ShouldRequireMfa()
     {
-        return !MfaVerified || 
+        return !MfaVerified ||
                (TwoFactorRequired && RiskScore > 50);
     }
 

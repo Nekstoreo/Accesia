@@ -1,5 +1,5 @@
-using FluentValidation;
 using Accesia.Application.Features.Users.DTOs;
+using FluentValidation;
 
 namespace Accesia.Application.Features.Users.Validators;
 
@@ -21,4 +21,4 @@ public class RequestAccountDeletionRequestValidator : AbstractValidator<RequestA
             .Equal(true)
             .WithMessage("Debe confirmar que desea eliminar su cuenta");
     }
-} 
+}

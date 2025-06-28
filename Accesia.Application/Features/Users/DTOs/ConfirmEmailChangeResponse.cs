@@ -7,4 +7,4 @@ public class ConfirmEmailChangeResponse
     public string? NewEmail { get; set; }
     public UserProfileDto? Profile { get; set; }
     public Dictionary<string, string[]>? ValidationErrors { get; set; }
-} 
+}

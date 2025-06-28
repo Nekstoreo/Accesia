@@ -1,8 +1,8 @@
+using Accesia.Application.Common.Exceptions;
+using Accesia.Application.Common.Interfaces;
+using Accesia.Application.Features.Users.DTOs;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using Accesia.Application.Common.Interfaces;
-using Accesia.Application.Common.Exceptions;
-using Accesia.Application.Features.Users.DTOs;
 
 namespace Accesia.Application.Features.Users.Queries.GetUserSettings;
 
@@ -68,4 +68,4 @@ public class GetUserSettingsHandler : IRequestHandler<GetUserSettingsQuery, GetU
             }
         };
     }
-} 
+}

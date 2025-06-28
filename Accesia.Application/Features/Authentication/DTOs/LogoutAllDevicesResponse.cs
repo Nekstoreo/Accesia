@@ -6,4 +6,4 @@ public class LogoutAllDevicesResponse
     public DateTime LogoutAt { get; set; }
     public int SessionsTerminated { get; set; }
     public bool Success { get; set; }
-} 
+}

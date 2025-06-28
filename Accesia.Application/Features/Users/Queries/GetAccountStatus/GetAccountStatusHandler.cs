@@ -1,8 +1,8 @@
+using Accesia.Application.Common.Exceptions;
+using Accesia.Application.Common.Interfaces;
+using Accesia.Application.Features.Users.DTOs;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using Accesia.Application.Common.Interfaces;
-using Accesia.Application.Common.Exceptions;
-using Accesia.Application.Features.Users.DTOs;
 
 namespace Accesia.Application.Features.Users.Queries.GetAccountStatus;
 
@@ -15,7 +15,8 @@ public class GetAccountStatusHandler : IRequestHandler<GetAccountStatusQuery, Ge
         _context = context;
     }
 
-    public async Task<GetAccountStatusResponse> Handle(GetAccountStatusQuery request, CancellationToken cancellationToken)
+    public async Task<GetAccountStatusResponse> Handle(GetAccountStatusQuery request,
+        CancellationToken cancellationToken)
     {
         var user = await _context.Users
             .FirstOrDefaultAsync(u => u.Id == request.UserId, cancellationToken);
@@ -40,4 +41,4 @@ public class GetAccountStatusHandler : IRequestHandler<GetAccountStatusQuery, Ge
             AllowedTransitions = user.GetAllowedTransitions().ToList()
         };
     }
-} 
+}

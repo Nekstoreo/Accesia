@@ -48,4 +48,4 @@ public class SecuritySettingsResponse
     public bool RequirePasswordChangeOn2FADisable { get; set; }
     public bool LogoutOnPasswordChange { get; set; }
     public int SessionTimeoutMinutes { get; set; }
-} 
+}
