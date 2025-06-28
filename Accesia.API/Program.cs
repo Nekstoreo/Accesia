@@ -3,7 +3,6 @@ using Accesia.Application.Extensions;
 using Accesia.Application.Common.Settings;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.EntityFrameworkCore;
 using System.Text;
 using Serilog;
 
