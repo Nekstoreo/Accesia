@@ -48,7 +48,7 @@ public class SecurityAuditLog : AuditableEntity
         OccurredAt = DateTime.UtcNow;
     }
 
-    public Guid Id { get; private set; }
+    public new Guid Id { get; private set; }
     public Guid? UserId { get; private set; }
     public string EventType { get; private set; } = string.Empty;
     public string EventCategory { get; private set; } = string.Empty;

@@ -42,7 +42,7 @@ public class LocationInfo
     {
         if (string.IsNullOrWhiteSpace(ipAddress))
             throw new ArgumentException("IP address no puede estar vacía", nameof(ipAddress));
-
+        // TODO: Implementar geolocalización
         // En una implementación real, aquí consultarías un servicio de geolocalización
         // como MaxMind GeoIP2, IP2Location, etc.
         return new LocationInfo(
