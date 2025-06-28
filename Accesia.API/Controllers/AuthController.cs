@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using MediatR;
 using System.Net;
 using Accesia.Application.Features.Authentication.Commands.RegisterUser;
+using Accesia.Application.Features.Authentication.Commands.LoginUser;
+using Accesia.Application.Features.Authentication.Commands.RefreshToken;
 using Accesia.Application.Features.Authentication.DTOs;
 using Accesia.Application.Common.Exceptions;
 using Accesia.Application.Features.Authentication.Commands.VerifyEmail;
@@ -149,6 +151,166 @@ public class AuthController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error interno al reenviar verificación");
+            return Problem(
+                detail: "Ha ocurrido un error inesperado. Por favor, intenta nuevamente más tarde.",
+                statusCode: 500,
+                title: "Error interno del servidor");
+        }
+    }
+
+    /// <summary>
+    /// Inicia sesión de un usuario con email y contraseña
+    /// </summary>
+    /// <param name="request">Datos de login del usuario</param>
+    /// <returns>Información de la sesión y tokens de acceso</returns>
+    [HttpPost("login")]
+    [ProducesResponseType(typeof(LoginResponse), (int)HttpStatusCode.OK)]
+    [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.Unauthorized)]
+    [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.Forbidden)]
+    [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.Locked)]
+    [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.TooManyRequests)]
+    public async Task<ActionResult<LoginResponse>> Login(
+        [FromBody] LoginRequest request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var clientIp = GetClientIpAddress();
+            var userAgent = Request.Headers["User-Agent"].ToString();
+            
+            var command = LoginUserCommand.FromRequest(request, clientIp, userAgent);
+            var response = await _mediator.Send(command, cancellationToken);
+            
+            _logger.LogInformation("Login exitoso para usuario {Email}", request.Email);
+            
+            return Ok(response);
+        }
+        catch (UserNotFoundException ex)
+        {
+            _logger.LogWarning(ex, "Usuario no encontrado para login: {Email}", ex.Email);
+            return Problem(
+                detail: ex.Message,
+                statusCode: 404,
+                title: "Usuario no encontrado");
+        }
+        catch (InvalidCredentialsException ex)
+        {
+            _logger.LogWarning(ex, "Credenciales inválidas para {Email}", ex.Email);
+            return Problem(
+                detail: ex.Message,
+                statusCode: 401,
+                title: "Credenciales inválidas");
+        }
+        catch (AccountLockedException ex)
+        {
+            _logger.LogWarning(ex, "Cuenta bloqueada para {Email}", ex.Email);
+            
+            Response.Headers.Append("Retry-After", ((int)ex.RemainingLockTime.TotalSeconds).ToString());
+            
+            return Problem(
+                detail: ex.Message,
+                statusCode: 423,
+                title: "Cuenta bloqueada");
+        }
+        catch (EmailNotVerifiedException ex)
+        {
+            _logger.LogWarning(ex, "Email no verificado para {Email}", ex.Email);
+            return Problem(
+                detail: ex.Message,
+                statusCode: 403,
+                title: "Email no verificado");
+        }
+        catch (RateLimitExceededException ex)
+        {
+            return HandleRateLimitExceeded(ex, "login");
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "Datos de entrada inválidos para login");
+            return BadRequest(new { 
+                mensaje = ex.Message,
+                timestamp = DateTime.UtcNow 
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error interno al procesar login");
+            return Problem(
+                detail: "Ha ocurrido un error inesperado. Por favor, intenta nuevamente más tarde.",
+                statusCode: 500,
+                title: "Error interno del servidor");
+        }
+    }
+
+    /// <summary>
+    /// Renueva el token de acceso usando un refresh token
+    /// </summary>
+    /// <param name="request">Datos del refresh token</param>
+    /// <returns>Nuevos tokens de acceso</returns>
+    [HttpPost("refresh-token")]
+    [ProducesResponseType(typeof(RefreshTokenResponse), (int)HttpStatusCode.OK)]
+    [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.Unauthorized)]
+    [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.Gone)]
+    [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.TooManyRequests)]
+    public async Task<ActionResult<RefreshTokenResponse>> RefreshToken(
+        [FromBody] RefreshTokenRequest request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var clientIp = GetClientIpAddress();
+            var userAgent = Request.Headers["User-Agent"].ToString();
+            
+            var command = RefreshTokenCommand.FromRequest(request, clientIp, userAgent);
+            var response = await _mediator.Send(command, cancellationToken);
+            
+            _logger.LogInformation("Token renovado exitosamente desde IP {IpAddress}", clientIp);
+            
+            return Ok(response);
+        }
+        catch (InvalidVerificationTokenException ex)
+        {
+            _logger.LogWarning(ex, "Refresh token inválido desde IP {IpAddress}", GetClientIpAddress());
+            return Problem(
+                detail: ex.Message,
+                statusCode: 401,
+                title: "Token inválido");
+        }
+        catch (ExpiredVerificationTokenException ex)
+        {
+            _logger.LogWarning(ex, "Refresh token expirado desde IP {IpAddress}", GetClientIpAddress());
+            return Problem(
+                detail: ex.Message,
+                statusCode: 410,
+                title: "Token expirado");
+        }
+        catch (UserNotFoundException ex)
+        {
+            _logger.LogWarning(ex, "Usuario no encontrado para refresh token desde IP {IpAddress}", GetClientIpAddress());
+            return Problem(
+                detail: ex.Message,
+                statusCode: 404,
+                title: "Usuario no encontrado");
+        }
+        catch (RateLimitExceededException ex)
+        {
+            return HandleRateLimitExceeded(ex, "refresh token");
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "Datos de entrada inválidos para refresh token");
+            return BadRequest(new { 
+                mensaje = ex.Message,
+                timestamp = DateTime.UtcNow 
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error interno al renovar token");
             return Problem(
                 detail: "Ha ocurrido un error inesperado. Por favor, intenta nuevamente más tarde.",
                 statusCode: 500,
