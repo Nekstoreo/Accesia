@@ -705,6 +705,15 @@ public class AuthController : ControllerBase
                 timestamp = DateTime.UtcNow 
             });
         }
+        catch (UnsafePasswordException ex)
+        {
+            _logger.LogWarning(ex, "Intento de usar contraseña insegura");
+            return BadRequest(new { 
+                mensaje = ex.Message,
+                sugerencias = ex.SecuritySuggestions,
+                timestamp = DateTime.UtcNow 
+            });
+        }
         catch (ArgumentException ex)
         {
             _logger.LogWarning(ex, "Datos de entrada inválidos para cambio de contraseña");

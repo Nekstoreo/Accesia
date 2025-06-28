@@ -14,17 +14,20 @@ public class ChangePasswordHandler : IRequestHandler<ChangePasswordCommand, Chan
     private readonly IApplicationDbContext _context;
     private readonly ILogger<ChangePasswordHandler> _logger;
     private readonly IPasswordHashService _passwordHashService;
+    private readonly IPasswordSecurityService _passwordSecurityService;
     private readonly IEmailService _emailService;
 
     public ChangePasswordHandler(
         IApplicationDbContext context,
         ILogger<ChangePasswordHandler> logger,
         IPasswordHashService passwordHashService,
+        IPasswordSecurityService passwordSecurityService,
         IEmailService emailService)
     {
         _context = context;
         _logger = logger;
         _passwordHashService = passwordHashService;
+        _passwordSecurityService = passwordSecurityService;
         _emailService = emailService;
     }
 
@@ -55,6 +58,16 @@ public class ChangePasswordHandler : IRequestHandler<ChangePasswordCommand, Chan
 
         // 3. Validar nueva contraseña
         var newPassword = new Password(request.NewPassword);
+        
+        // 3.1. Validar seguridad de la contraseña contra diccionarios comunes
+        if (!await _passwordSecurityService.IsPasswordSafeAsync(request.NewPassword, cancellationToken))
+        {
+            var suggestions = _passwordSecurityService.GetPasswordSecuritySuggestions(request.NewPassword);
+            _logger.LogWarning("Intento de usar contraseña insegura para usuario {UserId} ({Email}) desde IP {ClientIp}", 
+                request.UserId, user.Email.Value, request.ClientIp);
+            throw new UnsafePasswordException("La contraseña no cumple con los estándares de seguridad requeridos.", suggestions);
+        }
+        
         var newPasswordHash = _passwordHashService.HashPassword(newPassword.Value);
 
         // 4. Verificar que no sea la misma contraseña actual

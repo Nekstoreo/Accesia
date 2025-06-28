@@ -56,6 +56,7 @@ public static class ServiceCollectionExtensions
         // Registrar servicios
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<IPasswordHashService, PasswordHashService>();
+        services.AddScoped<IPasswordSecurityService, PasswordSecurityService>();
         services.AddScoped<IEmailService, EmailService>();
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<ISessionService, SessionService>();
