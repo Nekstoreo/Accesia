@@ -26,7 +26,7 @@
 
 - [X] 👤 **Perfil de Usuario**
 - [X] ⚙️ **Estados de Cuenta y Configuraciones**
-- [ ] 🗑️ **Eliminación de Cuenta**
+- [X] 🗑️ **Eliminación de Cuenta**
 
 ### **1.5. Seguridad Fundamental**
 
