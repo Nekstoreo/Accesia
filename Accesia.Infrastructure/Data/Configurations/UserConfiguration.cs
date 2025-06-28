@@ -29,6 +29,12 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(x => x.LastName).HasMaxLength(100).IsRequired();
         builder.Property(x => x.Status).IsRequired();
         
+        // Campos de eliminación de cuenta
+        builder.Property(x => x.AccountDeletionToken).HasMaxLength(512);
+        builder.Property(x => x.AccountDeletionTokenExpiresAt);
+        builder.Property(x => x.MarkedForDeletionAt);
+        builder.Property(x => x.DeletionReason).HasMaxLength(500);
+        
         // Campos opcionales
         builder.Property(x => x.PhoneNumber).HasMaxLength(20);
         builder.Property(x => x.PreferredLanguage).HasMaxLength(10).HasDefaultValue("es");
@@ -38,6 +44,8 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.HasIndex(x => x.Status);
         builder.HasIndex(x => x.CreatedAt);
         builder.HasIndex(x => x.LastLoginAt);
+        builder.HasIndex(x => x.AccountDeletionToken);
+        builder.HasIndex(x => x.MarkedForDeletionAt);
         
         // Relación con Sessions
         builder.HasMany(x => x.Sessions)

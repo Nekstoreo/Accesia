@@ -38,6 +38,12 @@ public class User : AuditableEntity
     public string? PasswordResetToken { get; set; }
     public DateTime? PasswordResetTokenExpiresAt { get; set; }
 
+    // Tokens de eliminación de cuenta
+    public string? AccountDeletionToken { get; set; }
+    public DateTime? AccountDeletionTokenExpiresAt { get; set; }
+    public DateTime? MarkedForDeletionAt { get; set; }
+    public string? DeletionReason { get; set; }
+
     // Metadatos opcionales
     public string? PhoneNumber { get; set; }
     public bool IsPhoneVerified { get; set; }
@@ -314,11 +320,47 @@ public class User : AuditableEntity
     public void MarkForDeletion()
     {
         Status = UserStatus.MarkedForDeletion;
+        MarkedForDeletionAt = DateTime.UtcNow;
         
         // Cerrar todas las sesiones activas
         foreach (var session in Sessions.Where(s => s.Status == SessionStatus.Active))
         {
             session.Revoke();
+        }
+    }
+
+    public void RequestAccountDeletion(string deletionToken, DateTime tokenExpiration, string? reason = null)
+    {
+        if (Status == UserStatus.MarkedForDeletion)
+            throw new InvalidOperationException("La cuenta ya está marcada para eliminación.");
+
+        AccountDeletionToken = deletionToken;
+        AccountDeletionTokenExpiresAt = tokenExpiration;
+        DeletionReason = reason;
+    }
+
+    public void ConfirmAccountDeletion()
+    {
+        if (string.IsNullOrEmpty(AccountDeletionToken))
+            throw new InvalidOperationException("No hay solicitud de eliminación pendiente.");
+
+        if (!IsAccountDeletionTokenValid(AccountDeletionToken))
+            throw new InvalidOperationException("El token de eliminación es inválido o ha expirado.");
+
+        MarkForDeletion();
+        ClearAccountDeletionToken();
+    }
+
+    public void CancelAccountDeletion()
+    {
+        if (string.IsNullOrEmpty(AccountDeletionToken) && Status != UserStatus.MarkedForDeletion)
+            throw new InvalidOperationException("No hay solicitud de eliminación pendiente.");
+
+        ClearAccountDeletionToken();
+        
+        if (Status == UserStatus.MarkedForDeletion)
+        {
+            RestoreFromDeletion();
         }
     }
 
@@ -328,6 +370,35 @@ public class User : AuditableEntity
             throw new InvalidOperationException("La cuenta no está marcada para eliminación.");
 
         Status = UserStatus.Inactive; // Requiere reactivación manual
+        MarkedForDeletionAt = null;
+        DeletionReason = null;
+        ClearAccountDeletionToken();
+    }
+
+    public bool IsAccountDeletionTokenValid(string token)
+    {
+        return !string.IsNullOrEmpty(AccountDeletionToken) &&
+               AccountDeletionToken == token &&
+               AccountDeletionTokenExpiresAt.HasValue &&
+               AccountDeletionTokenExpiresAt > DateTime.UtcNow;
+    }
+
+    public void ClearAccountDeletionToken()
+    {
+        AccountDeletionToken = null;
+        AccountDeletionTokenExpiresAt = null;
+    }
+
+    public bool IsInGracePeriod(int gracePeriodDays = 30)
+    {
+        return Status == UserStatus.MarkedForDeletion &&
+               MarkedForDeletionAt.HasValue &&
+               MarkedForDeletionAt.Value.AddDays(gracePeriodDays) > DateTime.UtcNow;
+    }
+
+    public DateTime? GetPermanentDeletionDate(int gracePeriodDays = 30)
+    {
+        return MarkedForDeletionAt?.AddDays(gracePeriodDays);
     }
 
     public bool CanPerformAction()
