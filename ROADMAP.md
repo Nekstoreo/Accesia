@@ -24,8 +24,8 @@
 
 ### **1.4. Gestión Básica de Usuarios**
 
-- [ ] 👤 **Perfil de Usuario**
-- [ ] ⚙️ **Estados de Cuenta y Configuraciones**
+- [X] 👤 **Perfil de Usuario**
+- [X] ⚙️ **Estados de Cuenta y Configuraciones**
 - [ ] 🗑️ **Eliminación de Cuenta**
 
 ### **1.5. Seguridad Fundamental**
