@@ -10,8 +10,12 @@ using Accesia.Application.Features.Users.Commands.ChangeEmail;
 using Accesia.Application.Features.Users.Commands.ConfirmEmailChange;
 using Accesia.Application.Features.Users.Commands.ChangeAccountStatus;
 using Accesia.Application.Features.Users.Commands.UpdateUserSettings;
+using Accesia.Application.Features.Users.Commands.RequestAccountDeletion;
+using Accesia.Application.Features.Users.Commands.CancelAccountDeletion;
+using Accesia.Application.Features.Users.Commands.ConfirmAccountDeletion;
 using Accesia.Application.Features.Users.Queries.GetAccountStatus;
 using Accesia.Application.Features.Users.Queries.GetUserSettings;
+using Accesia.Application.Features.Users.Queries.GetAccountDeletionStatus;
 using Accesia.API.Attributes;
 
 namespace Accesia.API.Controllers;
@@ -55,7 +59,7 @@ public class UserController : ControllerBase
     /// <param name="cancellationToken">Token de cancelación</param>
     /// <returns>Perfil actualizado</returns>
     [HttpPut("profile")]
-    [EnableRateLimiting("UserProfileUpdatePolicy")]
+    [EnableRateLimiting("ProfileUpdatePolicy")]
     public async Task<ActionResult<UpdateProfileResponse>> UpdateProfile(
         [FromBody] UpdateProfileRequest request, 
         CancellationToken cancellationToken)
@@ -104,7 +108,7 @@ public class UserController : ControllerBase
     /// <returns>Respuesta de confirmación</returns>
     [HttpPost("confirm-email-change")]
     [AllowAnonymous] // Permitir acceso anónimo para confirmar desde email
-    [EnableRateLimiting("EmailChangeConfirmPolicy")]
+    [EnableRateLimiting("EmailConfirmationPolicy")]
     public async Task<ActionResult<ConfirmEmailChangeResponse>> ConfirmEmailChange(
         [FromBody] ConfirmEmailChangeRequest request,
         CancellationToken cancellationToken)
@@ -188,7 +192,7 @@ public class UserController : ControllerBase
     /// <param name="cancellationToken">Token de cancelación</param>
     /// <returns>Resultado de la actualización</returns>
     [HttpPut("settings")]
-    [EnableRateLimiting("UserProfileUpdatePolicy")]
+    [EnableRateLimiting("ProfileUpdatePolicy")]
     public async Task<ActionResult<UpdateUserSettingsResponse>> UpdateUserSettings(
         [FromBody] UpdateUserSettingsRequest request,
         CancellationToken cancellationToken)
@@ -240,7 +244,98 @@ public class UserController : ControllerBase
         return Ok(response);
     }
 
-    #region Helper Methods
+    /// <summary>
+    /// Solicita la eliminación de la cuenta del usuario actual
+    /// </summary>
+    /// <param name="request">Datos de la solicitud de eliminación</param>
+    /// <param name="cancellationToken">Token de cancelación</param>
+    /// <returns>Resultado de la solicitud</returns>
+    [HttpPost("delete-account")]
+    [EnableRateLimiting("AccountDeletionPolicy")]
+    public async Task<ActionResult<RequestAccountDeletionResponse>> RequestAccountDeletion(
+        [FromBody] RequestAccountDeletionRequest request,
+        CancellationToken cancellationToken)
+    {
+        var userId = GetCurrentUserId();
+        var clientIpAddress = GetClientIpAddress();
+        var userAgent = GetUserAgent();
+
+        _logger.LogInformation("Solicitud de eliminación de cuenta para usuario {UserId} desde IP {ClientIp}",
+            userId, clientIpAddress);
+
+        var command = new RequestAccountDeletionCommand(userId, request, clientIpAddress, userAgent);
+        var response = await _mediator.Send(command, cancellationToken);
+
+        return Ok(response);
+    }
+
+    /// <summary>
+    /// Cancela una solicitud de eliminación de cuenta
+    /// </summary>
+    /// <param name="request">Token de cancelación</param>
+    /// <param name="cancellationToken">Token de cancelación</param>
+    /// <returns>Resultado de la cancelación</returns>
+    [HttpPost("cancel-deletion")]
+    [AllowAnonymous] // Permitir acceso anónimo para cancelar desde email
+    [EnableRateLimiting("AccountDeletionPolicy")]
+    public async Task<ActionResult<CancelAccountDeletionResponse>> CancelAccountDeletion(
+        [FromBody] CancelAccountDeletionRequest request,
+        CancellationToken cancellationToken)
+    {
+        var clientIpAddress = GetClientIpAddress();
+        var userAgent = GetUserAgent();
+
+        _logger.LogInformation("Cancelación de eliminación desde IP {ClientIp} con token {Token}",
+            clientIpAddress, request.CancellationToken);
+
+        var command = new CancelAccountDeletionCommand(request, clientIpAddress, userAgent);
+        var response = await _mediator.Send(command, cancellationToken);
+
+        return Ok(response);
+    }
+
+    /// <summary>
+    /// Confirma la eliminación permanente de la cuenta
+    /// </summary>
+    /// <param name="request">Token y confirmación final</param>
+    /// <param name="cancellationToken">Token de cancelación</param>
+    /// <returns>Resultado de la confirmación</returns>
+    [HttpPost("confirm-deletion")]
+    [AllowAnonymous] // Permitir acceso anónimo para confirmar desde email
+    [EnableRateLimiting("AccountDeletionPolicy")]
+    public async Task<ActionResult<ConfirmAccountDeletionResponse>> ConfirmAccountDeletion(
+        [FromBody] ConfirmAccountDeletionRequest request,
+        CancellationToken cancellationToken)
+    {
+        var clientIpAddress = GetClientIpAddress();
+        var userAgent = GetUserAgent();
+
+        _logger.LogInformation("Confirmación de eliminación desde IP {ClientIp} con token {Token}",
+            clientIpAddress, request.DeletionToken);
+
+        var command = new ConfirmAccountDeletionCommand(request, clientIpAddress, userAgent);
+        var response = await _mediator.Send(command, cancellationToken);
+
+        return Ok(response);
+    }
+
+    /// <summary>
+    /// Obtiene el estado de eliminación de la cuenta del usuario actual
+    /// </summary>
+    /// <param name="cancellationToken">Token de cancelación</param>
+    /// <returns>Estado de eliminación de la cuenta</returns>
+    [HttpGet("deletion-status")]
+    [EnableRateLimiting("UserProfilePolicy")]
+    public async Task<ActionResult<GetAccountDeletionStatusResponse>> GetAccountDeletionStatus(CancellationToken cancellationToken)
+    {
+        var userId = GetCurrentUserId();
+        _logger.LogInformation("Consulta de estado de eliminación para usuario {UserId}", userId);
+
+        var query = new GetAccountDeletionStatusQuery(userId);
+        var response = await _mediator.Send(query, cancellationToken);
+
+        return Ok(response);
+    }
 
     private Guid GetCurrentUserId()
     {
@@ -276,6 +371,4 @@ public class UserController : ControllerBase
     {
         return Request.Headers["User-Agent"].FirstOrDefault() ?? "unknown";
     }
-
-    #endregion
 } 

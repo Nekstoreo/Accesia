@@ -3,8 +3,10 @@ using Accesia.Application.Extensions;
 using Accesia.Application.Common.Settings;
 using Accesia.Application.Common.Exceptions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using System.Threading.RateLimiting;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -61,6 +63,109 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization();
 
+// Configurar Rate Limiting
+builder.Services.AddRateLimiter(options =>
+{
+    options.OnRejected = async (context, token) =>
+    {
+        context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+        
+        var logMessage = $"Rate limit alcanzado para endpoint {context.HttpContext.Request.Path}. " +
+                         $"Usuario: {context.HttpContext.User.Identity?.Name ?? "Anónimo"}, " +
+                         $"IP: {context.HttpContext.Connection.RemoteIpAddress}";
+        
+        context.HttpContext.RequestServices.GetService<ILogger<Program>>()?.LogWarning(logMessage);
+        
+        await context.HttpContext.Response.WriteAsJsonAsync(
+            new { title = "Demasiadas solicitudes", detail = "Has excedido el límite de solicitudes permitidas. Por favor, intenta más tarde." },
+            token);
+    };
+    
+    // Política general para perfil de usuario (5 peticiones por minuto)
+    options.AddTokenBucketLimiter("UserProfilePolicy", options =>
+    {
+        options.TokenLimit = 5;
+        options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        options.QueueLimit = 2;
+        options.ReplenishmentPeriod = TimeSpan.FromMinutes(1);
+        options.TokensPerPeriod = 5;
+    });
+    
+    // Política para actualizaciones de perfil (2 peticiones por hora)
+    options.AddFixedWindowLimiter("ProfileUpdatePolicy", options =>
+    {
+        options.PermitLimit = 2;
+        options.Window = TimeSpan.FromHours(1);
+        options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        options.QueueLimit = 1;
+    });
+    
+    // Política para cambios de email (1 petición por día)
+    options.AddFixedWindowLimiter("EmailChangePolicy", options =>
+    {
+        options.PermitLimit = 1;
+        options.Window = TimeSpan.FromDays(1);
+        options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        options.QueueLimit = 0;
+    });
+    
+    // Política para confirmación de cambio de email (3 intentos por hora)
+    options.AddFixedWindowLimiter("EmailConfirmationPolicy", options =>
+    {
+        options.PermitLimit = 3;
+        options.Window = TimeSpan.FromHours(1);
+        options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        options.QueueLimit = 0;
+    });
+    
+    // Política para administradores (más permisiva)
+    options.AddTokenBucketLimiter("AdminPolicy", options =>
+    {
+        options.TokenLimit = 50;
+        options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        options.QueueLimit = 5;
+        options.ReplenishmentPeriod = TimeSpan.FromMinutes(1);
+        options.TokensPerPeriod = 50;
+    });
+    
+    // Política para eliminación de cuenta (muy restrictiva - 1 solicitud por semana)
+    options.AddFixedWindowLimiter("AccountDeletionPolicy", options =>
+    {
+        options.PermitLimit = 1;
+        options.Window = TimeSpan.FromDays(7);
+        options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        options.QueueLimit = 0;
+    });
+    
+    // Política para intentos de login (10 intentos por 5 minutos, luego se bloquea)
+    options.AddSlidingWindowLimiter("LoginAttemptPolicy", options =>
+    {
+        options.PermitLimit = 10;
+        options.Window = TimeSpan.FromMinutes(5);
+        options.SegmentsPerWindow = 5;
+        options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        options.QueueLimit = 0; // Sin cola, rechazar directamente
+    });
+    
+    // Política para registros de usuario (3 registros por día por IP)
+    options.AddFixedWindowLimiter("RegisterPolicy", options =>
+    {
+        options.PermitLimit = 3;
+        options.Window = TimeSpan.FromDays(1);
+        options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        options.QueueLimit = 0;
+    });
+    
+    // Política para solicitudes de restablecimiento de contraseña (3 solicitudes por día)
+    options.AddFixedWindowLimiter("PasswordResetPolicy", options =>
+    {
+        options.PermitLimit = 3;
+        options.Window = TimeSpan.FromDays(1);
+        options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        options.QueueLimit = 0;
+    });
+});
+
 // Configurar CORS
 builder.Services.AddCors(options =>
 {
@@ -103,6 +208,8 @@ app.UseMiddleware<ExceptionMiddleware>();
 app.UseSerilogRequestLogging();
 
 app.UseRouting();
+
+app.UseRateLimiter();
 
 app.UseAuthentication();
 app.UseAuthorization();

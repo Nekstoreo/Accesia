@@ -14,6 +14,7 @@ using Accesia.Application.Features.Authentication.Commands.RequestPasswordReset;
 using Accesia.Application.Features.Authentication.Commands.ConfirmPasswordReset;
 using Accesia.Application.Features.Authentication.Commands.ChangePassword;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.RateLimiting;
 using System.Security.Claims;
 using Accesia.API.Attributes;
 using Accesia.Application.Common.Interfaces;
@@ -42,6 +43,7 @@ public class AuthController : ControllerBase
     /// <param name="request">Datos del usuario a registrar</param>
     /// <returns>Información del usuario registrado</returns>
     [HttpPost("register")]
+    [EnableRateLimiting("RegisterPolicy")]
     [ProducesResponseType(typeof(RegisterUserResponse), (int)HttpStatusCode.Created)]
     [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.Conflict)]
@@ -175,6 +177,7 @@ public class AuthController : ControllerBase
     /// <param name="request">Datos de login del usuario</param>
     /// <returns>Información de la sesión y tokens de acceso</returns>
     [HttpPost("login")]
+    [EnableRateLimiting("LoginAttemptPolicy")]
     [ProducesResponseType(typeof(LoginResponse), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.Unauthorized)]
