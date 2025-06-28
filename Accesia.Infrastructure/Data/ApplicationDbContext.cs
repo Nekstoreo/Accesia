@@ -19,6 +19,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<RolePermission> RolePermissions { get; set; }
     public DbSet<PasswordHistory> PasswordHistories { get; set; }
     public DbSet<UserAuditLog> UserAuditLogs { get; set; }
+    public DbSet<UserSettings> UserSettings { get; set; }
 
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) 
         : base(options)
