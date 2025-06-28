@@ -14,6 +14,7 @@ public interface IApplicationDbContext
     DbSet<PasswordHistory> PasswordHistories { get; set; }
     DbSet<UserAuditLog> UserAuditLogs { get; set; }
     DbSet<UserSettings> UserSettings { get; set; }
+    DbSet<SecurityAuditLog> SecurityAuditLogs { get; set; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 } 
