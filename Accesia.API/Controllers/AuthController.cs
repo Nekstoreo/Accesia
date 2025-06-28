@@ -8,6 +8,8 @@ using Accesia.Application.Features.Authentication.DTOs;
 using Accesia.Application.Common.Exceptions;
 using Accesia.Application.Features.Authentication.Commands.VerifyEmail;
 using Accesia.Application.Features.Authentication.Commands.ResendVerificationEmail;
+using Accesia.Application.Features.Authentication.Commands.Logout;
+using Accesia.Application.Features.Authentication.Commands.LogoutAllDevices;
 
 namespace Accesia.API.Controllers;
 
@@ -440,6 +442,92 @@ public class AuthController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error interno al verificar correo electrónico");
+            return Problem(
+                detail: "Ha ocurrido un error inesperado. Por favor, intenta nuevamente más tarde.",
+                statusCode: 500,
+                title: "Error interno del servidor");
+        }
+    }
+
+    /// <summary>
+    /// Cierra la sesión del usuario invalidando el token JWT y la sesión almacenada
+    /// </summary>
+    /// <param name="request">Datos para el cierre de sesión</param>
+    /// <returns>Respuesta del cierre de sesión</returns>
+    [HttpPost("logout")]
+    [ProducesResponseType(typeof(LogoutResponse), (int)HttpStatusCode.OK)]
+    [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.NotFound)]
+    public async Task<ActionResult<LogoutResponse>> Logout(
+        [FromBody] LogoutRequest request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var clientIp = GetClientIpAddress();
+            var userAgent = Request.Headers["User-Agent"].ToString();
+            
+            var command = LogoutCommand.FromRequest(request, clientIp, userAgent);
+            var response = await _mediator.Send(command, cancellationToken);
+            
+            _logger.LogInformation("Logout procesado desde IP {IpAddress}", clientIp);
+            
+            return Ok(response);
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "Datos de entrada inválidos para logout");
+            return BadRequest(new { 
+                mensaje = ex.Message,
+                timestamp = DateTime.UtcNow 
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error interno al procesar logout");
+            return Problem(
+                detail: "Ha ocurrido un error inesperado. Por favor, intenta nuevamente más tarde.",
+                statusCode: 500,
+                title: "Error interno del servidor");
+        }
+    }
+
+    /// <summary>
+    /// Cierra sesión en todos los dispositivos del usuario invalidando todas las sesiones activas
+    /// </summary>
+    /// <param name="request">Datos para el cierre de sesión en todos los dispositivos</param>
+    /// <returns>Respuesta del cierre de sesión en todos los dispositivos</returns>
+    [HttpPost("logout-all-devices")]
+    [ProducesResponseType(typeof(LogoutAllDevicesResponse), (int)HttpStatusCode.OK)]
+    [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.NotFound)]
+    public async Task<ActionResult<LogoutAllDevicesResponse>> LogoutAllDevices(
+        [FromBody] LogoutAllDevicesRequest request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var clientIp = GetClientIpAddress();
+            var userAgent = Request.Headers["User-Agent"].ToString();
+            
+            var command = LogoutAllDevicesCommand.FromRequest(request, clientIp, userAgent);
+            var response = await _mediator.Send(command, cancellationToken);
+            
+            _logger.LogInformation("Logout de todos los dispositivos procesado desde IP {IpAddress}", clientIp);
+            
+            return Ok(response);
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "Datos de entrada inválidos para logout de todos los dispositivos");
+            return BadRequest(new { 
+                mensaje = ex.Message,
+                timestamp = DateTime.UtcNow 
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error interno al procesar logout de todos los dispositivos");
             return Problem(
                 detail: "Ha ocurrido un error inesperado. Por favor, intenta nuevamente más tarde.",
                 statusCode: 500,
