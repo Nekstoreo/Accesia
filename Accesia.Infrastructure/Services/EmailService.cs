@@ -32,4 +32,19 @@ public class EmailService : IEmailService
         _logger.LogInformation("Enviando email de bienvenida a {Email} para {FirstName}", email, firstName);
         return Task.CompletedTask;
     }
+
+    public Task SendPasswordChangeNotificationAsync(string email, string firstName, DateTime changedAt, string deviceInfo, CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("Enviando notificación de cambio de contraseña a {Email} para {FirstName}. Cambio realizado el {ChangedAt} desde dispositivo: {DeviceInfo}", 
+            email, firstName, changedAt, deviceInfo);
+        
+        // TODO: Implementar plantilla de email específica para cambio de contraseña
+        // El email debería incluir:
+        // - Fecha y hora del cambio
+        // - Información del dispositivo/ubicación
+        // - Instrucciones de qué hacer si no fue el usuario
+        // - Enlaces de contacto/soporte
+        
+        return Task.CompletedTask;
+    }
 } 
