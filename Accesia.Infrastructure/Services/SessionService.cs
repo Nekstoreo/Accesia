@@ -61,7 +61,7 @@ public class SessionService : ISessionService
             .FirstOrDefaultAsync(s => s.SessionToken == sessionToken, cancellationToken);
     }
 
-    public async Task<Session?> RefreshSessionAsync(string refreshToken, CancellationToken cancellationToken = default)
+    public async Task<Session?> RefreshSessionAsync(string? refreshToken, CancellationToken cancellationToken = default)
     {
         var session = await _context.Sessions
             .Include(s => s.User)

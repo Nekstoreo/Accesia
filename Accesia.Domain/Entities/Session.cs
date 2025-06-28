@@ -9,7 +9,7 @@ public class Session : AuditableEntity
     // Identificación y relación
     public Guid UserId { get; set; }
     public required string SessionToken { get; set; }
-    public required string RefreshToken { get; set; }
+    public required string? RefreshToken { get; set; }
     public SessionStatus Status { get; set; }
 
     // Información temporal

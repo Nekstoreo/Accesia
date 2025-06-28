@@ -7,7 +7,7 @@ public interface ISessionService
 {
     Task<Session> CreateSessionAsync(User user, DeviceInfo deviceInfo, LocationInfo locationInfo, string loginMethod, CancellationToken cancellationToken = default);
     Task<Session?> GetSessionByTokenAsync(string sessionToken, CancellationToken cancellationToken = default);
-    Task<Session?> RefreshSessionAsync(string refreshToken, CancellationToken cancellationToken = default);
+    Task<Session?> RefreshSessionAsync(string? refreshToken, CancellationToken cancellationToken = default);
     Task RevokeSessionAsync(string sessionToken, CancellationToken cancellationToken = default);
     Task RevokeAllUserSessionsAsync(Guid userId, CancellationToken cancellationToken = default);
     Task RevokeAllUserSessionsExceptCurrentAsync(Guid userId, string currentSessionToken, CancellationToken cancellationToken = default);

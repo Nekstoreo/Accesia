@@ -119,7 +119,7 @@ public class VerifyEmailHandler : IRequestHandler<VerifyEmailCommand, VerifyEmai
         }
     }
 
-    private async Task<User?> FindUserByTokenAsync(string token, CancellationToken cancellationToken)
+    private async Task<User?> FindUserByTokenAsync(string? token, CancellationToken cancellationToken)
     {
         return await _context.Users.FirstOrDefaultAsync(u => u.EmailVerificationToken == token, cancellationToken);
     }
