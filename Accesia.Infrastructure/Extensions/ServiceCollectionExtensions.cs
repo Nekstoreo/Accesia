@@ -6,6 +6,7 @@ using Accesia.Infrastructure.Data;
 using Accesia.Application.Common.Interfaces;
 using Accesia.Application.Common.Settings;
 using Accesia.Infrastructure.Services;
+using Accesia.Infrastructure.Jobs;
 
 namespace Accesia.Infrastructure.Extensions;
 
@@ -61,6 +62,9 @@ public static class ServiceCollectionExtensions
 
         // Registrar Memory Cache para rate limiting
         services.AddMemoryCache();
+
+        // Registrar background jobs
+        services.AddHostedService<TokenCleanupJob>();
 
         // TODO: Registrar repositorios cuando se implementen
         // services.AddScoped<IUserRepository, UserRepository>();

@@ -14,7 +14,9 @@ public class RateLimitService : IRateLimitService
     {
         { "user_registration", new RateLimitConfig { MaxAttempts = 3, WindowMinutes = 60 } },
         { "login", new RateLimitConfig { MaxAttempts = 5, WindowMinutes = 15 } },
-        { "password_reset", new RateLimitConfig { MaxAttempts = 3, WindowMinutes = 60 } }
+        { "password_reset", new RateLimitConfig { MaxAttempts = 3, WindowMinutes = 60 } },
+        { "email_verification", new RateLimitConfig { MaxAttempts = 10, WindowMinutes = 60 } },
+        { "resend_verification", new RateLimitConfig { MaxAttempts = 3, WindowMinutes = 60 } } // Más restrictivo
     };
 
     public RateLimitService(IMemoryCache cache, ILogger<RateLimitService> logger)
