@@ -5,5 +5,6 @@ public enum ResourceType
     Permissions = 3,
     Sessions = 4,   
     Audit = 5,      
-    Settings = 6    
+    Settings = 6,
+    UserProfile = 7
 }

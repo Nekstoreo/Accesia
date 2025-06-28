@@ -47,6 +47,7 @@ public class User : AuditableEntity
     public ICollection<Session> Sessions { get; set; } = new List<Session>();
     public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
     public ICollection<PasswordHistory> PasswordHistories { get; set; } = new List<PasswordHistory>();
+    public ICollection<UserAuditLog> AuditLogs { get; set; } = new List<UserAuditLog>();
 
     // Constructor privado para EF Core
     private User() { }
@@ -214,5 +215,61 @@ public class User : AuditableEntity
                PasswordResetToken == token &&
                PasswordResetTokenExpiresAt.HasValue &&
                PasswordResetTokenExpiresAt > DateTime.UtcNow;
+    }
+
+    // Métodos para gestión de perfil
+    public void UpdateProfile(string? firstName = null, string? lastName = null, 
+                             string? phoneNumber = null, string? preferredLanguage = null, 
+                             string? timeZone = null)
+    {
+        if (!string.IsNullOrWhiteSpace(firstName))
+            FirstName = firstName;
+        
+        if (!string.IsNullOrWhiteSpace(lastName))
+            LastName = lastName;
+            
+        if (phoneNumber != null) // Permitir valores vacíos para limpiar el teléfono
+            PhoneNumber = string.IsNullOrWhiteSpace(phoneNumber) ? null : phoneNumber;
+            
+        if (!string.IsNullOrWhiteSpace(preferredLanguage))
+            PreferredLanguage = preferredLanguage;
+            
+        if (!string.IsNullOrWhiteSpace(timeZone))
+            TimeZone = timeZone;
+    }
+
+    public void InitiateEmailChange(Email newEmail, string verificationToken, DateTime tokenExpiration)
+    {
+        if (newEmail.Value == Email.Value)
+            throw new InvalidOperationException("El nuevo email debe ser diferente al actual.");
+
+        // Guardamos el token en el campo de verificación para el cambio de email
+        SetEmailVerificationToken(verificationToken, tokenExpiration);
+    }
+
+    public void ConfirmEmailChange(Email newEmail)
+    {
+        if (newEmail.Value == Email.Value)
+            throw new InvalidOperationException("El nuevo email debe ser diferente al actual.");
+
+        var oldEmail = Email;
+        Email = newEmail;
+        IsEmailVerified = true;
+        EmailVerifiedAt = DateTime.UtcNow;
+        ClearEmailVerificationToken();
+    }
+
+    public void ClearEmailVerificationToken()
+    {
+        EmailVerificationToken = null;
+        EmailVerificationTokenExpiresAt = null;
+    }
+
+    public bool IsEmailVerificationTokenValid(string token)
+    {
+        return !string.IsNullOrEmpty(EmailVerificationToken) &&
+               EmailVerificationToken == token &&
+               EmailVerificationTokenExpiresAt.HasValue &&
+               EmailVerificationTokenExpiresAt > DateTime.UtcNow;
     }
 }
