@@ -81,28 +81,61 @@ public class User : AuditableEntity
 
     public void LockAccount(TimeSpan duration)
     {
-        if (Status != UserStatus.Active)
-            throw new InvalidOperationException("El usuario no está activo.");
-
         LockedUntil = DateTime.UtcNow + duration;
+        Status = UserStatus.Blocked;
     }
 
     public void UnlockAccount()
     {
-        if (Status != UserStatus.Blocked)
-            throw new InvalidOperationException("El usuario no está bloqueado.");
-
         LockedUntil = null;
+        Status = UserStatus.Active;
+        ResetFailedLoginAttempts();
     }
 
     public void IncrementFailedLoginAttempts()
     {
         FailedLoginAttempts++;
+        
+        // Bloqueo exponencial basado en número de intentos
+        if (FailedLoginAttempts >= GetMaxFailedAttempts())
+        {
+            var lockoutDuration = CalculateExponentialLockoutDuration();
+            LockAccount(lockoutDuration);
+        }
     }
 
     public void ResetFailedLoginAttempts()
     {
         FailedLoginAttempts = 0;
+    }
+
+    public void OnSuccessfulLogin()
+    {
+        LastLoginAt = DateTime.UtcNow;
+        ResetFailedLoginAttempts();
+        
+        if (Status == UserStatus.Blocked && !IsAccountLocked())
+        {
+            Status = UserStatus.Active;
+        }
+    }
+
+    private int GetMaxFailedAttempts()
+    {
+        return 5; // Configurable en el futuro
+    }
+
+    private TimeSpan CalculateExponentialLockoutDuration()
+    {
+        // Fórmula exponencial: 2^(intentos - maxIntentos) minutos
+        var extraAttempts = FailedLoginAttempts - GetMaxFailedAttempts();
+        var minutes = Math.Pow(2, extraAttempts + 1); // Comienza en 2 minutos
+        
+        // Limitar a un máximo de 24 horas
+        var maxMinutes = 24 * 60; // 24 horas
+        minutes = Math.Min(minutes, maxMinutes);
+        
+        return TimeSpan.FromMinutes(minutes);
     }
 
     public void SetPasswordResetToken(string token, DateTime expiresAt)
