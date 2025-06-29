@@ -25,11 +25,19 @@ public record Password
 
     public static bool IsStrongPassword(string password)
     {
+        if (password is null)
+            throw new ArgumentNullException(nameof(password));
+        if (password.Length == 0)
+            return false;
+        if (password.Any(char.IsControl))
+            return false;
         return PasswordRegex.IsMatch(password);
     }
 
     public static bool ValidatePassword(string password)
     {
+        if (password is null)
+            throw new ArgumentNullException(nameof(password));
         return IsStrongPassword(password);
     }
 
