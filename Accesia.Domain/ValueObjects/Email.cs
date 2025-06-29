@@ -14,6 +14,10 @@ public record Email
         if (string.IsNullOrWhiteSpace(email))
             throw new ArgumentException("El email no puede estar vacío.", nameof(email));
 
+        // Validar que no contenga caracteres de control
+        if (email.Any(char.IsControl))
+            throw new ArgumentException("El email no puede contener caracteres de control.", nameof(email));
+
         var normalizedEmail = email.Trim().ToLowerInvariant();
 
         if (!IsValidEmail(normalizedEmail))
