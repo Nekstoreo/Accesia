@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Accesia.Domain", "Accesia.D
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Accesia.Infrastructure", "Accesia.Infrastructure\Accesia.Infrastructure.csproj", "{CBAB8F2C-B294-40FB-B58E-4580242F303E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Accesia.Tests", "Accesia.Tests\Accesia.Tests.csproj", "{A5B2C3D4-E6F7-8901-2345-6789ABCDEF01}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -36,5 +38,9 @@ Global
 		{CBAB8F2C-B294-40FB-B58E-4580242F303E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CBAB8F2C-B294-40FB-B58E-4580242F303E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CBAB8F2C-B294-40FB-B58E-4580242F303E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A5B2C3D4-E6F7-8901-2345-6789ABCDEF01}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A5B2C3D4-E6F7-8901-2345-6789ABCDEF01}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A5B2C3D4-E6F7-8901-2345-6789ABCDEF01}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A5B2C3D4-E6F7-8901-2345-6789ABCDEF01}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
