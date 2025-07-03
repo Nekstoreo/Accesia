@@ -4,6 +4,10 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Serilog;
+using Accesia.Infrastructure.Data;
+using Accesia.Application.Settings;
+using AspNetCoreRateLimit;
+using Accesia.Application.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,9 +28,15 @@ builder.Services.AddSwaggerGen();
 // Agregar servicios de infraestructura (Entity Framework, etc.)
 builder.Services.AddInfrastructure(builder.Configuration);
 
+// Agregar servicios de aplicación
+builder.Services.AddApplication();
+
 // Configurar Health Checks
 builder.Services.AddHealthChecks()
-    .AddDbContextCheck<Accesia.Infrastructure.Data.ApplicationDbContext>();
+    .AddDbContextCheck<ApplicationDbContext>();
+
+builder.Services.Configure<PasswordHashSettings>(
+    builder.Configuration.GetSection(PasswordHashSettings.SectionName));
 
 // Configurar JWT Authentication
 var jwtSettings = builder.Configuration.GetSection(JwtSettings.SectionName).Get<JwtSettings>();
@@ -67,6 +77,12 @@ builder.Services.AddCors(options =>
     });
 });
 
+// Configuración de rate limiting
+builder.Services.AddMemoryCache();
+builder.Services.Configure<IpRateLimitOptions>(builder.Configuration.GetSection("IpRateLimiting"));
+builder.Services.AddInMemoryRateLimiting();
+builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
+
 var app = builder.Build();
 
 // Ejecutar migraciones automáticamente en desarrollo
@@ -98,6 +114,8 @@ app.UseRouting();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.UseIpRateLimiting();
 
 app.MapControllers();
 
