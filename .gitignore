@@ -98,3 +98,5 @@ __pycache__/
 
 appsettings.Development.json
 .cursor
+
+**/general.instructions.md

@@ -1,9 +1,22 @@
 ---
 description: "Estándares para la escritura de código C# en el proyecto Accesia"
-applyTo: "**/*.cs"
+applyTo: "**"
 ---
 
 # Estándares de Código C#
+
+Este documento establece las normas y convenciones para la escritura de código C# en el proyecto **Accesia**. 
+El objetivo es mantener un código limpio, legible y mantenible, facilitando la colaboración entre desarrolladores.
+
+## Estructura del Proyecto
+El proyecto está organizado en capas siguiendo la arquitectura limpia. 
+Cada capa tiene una responsabilidad específica y separan claramente las preocupaciones. 
+La estructura es la siguiente:
+
+#### 🎯 **API Layer** - `Accesia.API`
+#### 🧠 **Application Layer** - `Accesia.Application`
+#### 🏛️ **Domain Layer** - `Accesia.Domain`
+#### 🔧 **Infrastructure Layer** - `Accesia.Infrastructure`
 
 ## Estilo y Formato
 
